@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 
+	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
 )
 
@@ -45,33 +46,33 @@ func main() {
 
 	go handleGracefulShutdown()
 
-	remoteServerAddr := *remoteServerIP + ":" + *remoteServerPort
+	wsServerAddr := fmt.Sprintf("ws://%s:%s/ws", *remoteServerIP, *remoteServerPort)
 	udpServerAddr := "127.0.0.1:" + *listeningPort
 
-	conn, err := net.ListenPacket("udp", udpServerAddr)
+	udpListener, err := net.ListenPacket("udp", udpServerAddr)
 	if err != nil {
 		errStr := "[error] creating udp listener: " + err.Error()
 		fmt.Println(errStr)
 		logFile.WriteString(errStr + "\n")
 		os.Exit(1)
 	}
-	defer conn.Close()
+	defer udpListener.Close()
 
 	fmt.Println("[+] UDP listener on", udpServerAddr)
 
-	remoteServerConn, err := net.Dial("tcp", remoteServerAddr)
+	wsConn, _, err := websocket.DefaultDialer.Dial(wsServerAddr, nil)
 	if err != nil {
-		errStr := "[error] connecting to the remote server: " + err.Error()
+		errStr := "[error] ws dial: " + err.Error()
 		fmt.Println(errStr)
 		logFile.WriteString(errStr + "\n")
 		os.Exit(1)
 	}
-	defer remoteServerConn.Close()
+	defer wsConn.Close()
 
 	buf := make([]byte, 4096)
 
 	for {
-		n, _, err := conn.ReadFrom(buf)
+		n, _, err := udpListener.ReadFrom(buf)
 		if err != nil {
 			errStr := "[error] reading data from the udp conn: " + err.Error()
 			fmt.Println(errStr)
@@ -88,9 +89,9 @@ func main() {
 			continue
 		}
 
-		_, err = remoteServerConn.Write(encryptedData)
+		err = wsConn.WriteMessage(websocket.BinaryMessage, encryptedData)
 		if err != nil {
-			errStr := "[error] writing to the server tcp connection: " + err.Error()
+			errStr := "[error] ws write: " + err.Error()
 			fmt.Println(errStr)
 			logFile.WriteString(errStr + "\n")
 			continue

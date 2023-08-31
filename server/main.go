@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net"
+	"net/http"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -32,42 +32,19 @@ func main() {
 
 	serverAddr := *serverIP + ":" + *serverPort
 
-	listener, err := net.Listen("tcp", serverAddr)
+	wsHandler := wsHandler{
+		secretKey: secretKey,
+		logFile:   logFile,
+	}
+
+	http.HandleFunc("/ws", wsHandler.handleWebSocket)
+
+	fmt.Println("[+] Listening on", serverAddr)
+	err = http.ListenAndServe(serverAddr, nil)
 	if err != nil {
-		errStr := "[error] creating tcp listener: " + err.Error()
+		errStr := "[error] ws listener: " + err.Error()
 		fmt.Println(errStr)
 		logFile.WriteString(errStr + "\n")
 		os.Exit(1)
-	}
-	defer listener.Close()
-
-	fmt.Println("[+] Listening on", serverAddr)
-
-	buf := make([]byte, 4096)
-
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			errStr := "[error] connecting: " + err.Error()
-			fmt.Println(errStr)
-			logFile.WriteString(errStr + "\n")
-			continue
-		}
-
-		for {
-			n, err := conn.Read(buf)
-			if err != nil {
-				errStr := "[error] reading from the connection: " + err.Error()
-				fmt.Println(errStr)
-				logFile.WriteString(errStr + "\n")
-				break
-			}
-
-			fmt.Println("received data")
-
-			go handle(buf[:n], secretKey, logFile)
-		}
-
-		conn.Close()
 	}
 }
