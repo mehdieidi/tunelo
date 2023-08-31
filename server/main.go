@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net"
 
@@ -10,10 +11,16 @@ import (
 var secretKey = []byte("123abc@#$456asdfg#$%89756*&^fegv")
 
 func main() {
-	listener, err := net.Listen("tcp", "127.0.0.1:23230")
+	serverIPFlag := flag.String("i", "127.0.0.1", "Server IP address.")
+	serverPortFlag := flag.String("p", "23230", "Server port.")
+	flag.Parse()
+
+	listener, err := net.Listen("tcp", *serverIPFlag+":"+*serverPortFlag)
 	if err != nil {
 		panic(err)
 	}
+
+	fmt.Println("Listening on", *serverIPFlag, ":", *serverPortFlag)
 
 	buf := make([]byte, 2048)
 
