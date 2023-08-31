@@ -62,5 +62,6 @@ func (wh *wsHandler) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		}
 
 		fmt.Println("decrypted data:", string(decryptedData))
+		sendToWireguard(decryptedData)
 	}
 }
