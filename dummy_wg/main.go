@@ -16,7 +16,7 @@ func main() {
 	var i int
 
 	for {
-		time.Sleep(3 * time.Second)
+		time.Sleep(1 * time.Second)
 
 		_, err := conn.Write([]byte("dummy data" + strconv.Itoa(i)))
 		if err != nil {

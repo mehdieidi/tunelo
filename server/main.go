@@ -3,62 +3,71 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"net"
+	"os"
 
-	"golang.org/x/crypto/chacha20poly1305"
+	"github.com/joho/godotenv"
 )
 
-var secretKey = []byte("123abc@#$456asdfg#$%89756*&^fegv")
-
 func main() {
-	serverIPFlag := flag.String("i", "127.0.0.1", "Server IP address.")
-	serverPortFlag := flag.String("p", "23230", "Server port.")
+	serverIP := flag.String("i", "127.0.0.1", "Server IP address.")
+	serverPort := flag.String("p", "23230", "Server port.")
 	flag.Parse()
 
-	listener, err := net.Listen("tcp", *serverIPFlag+":"+*serverPortFlag)
+	logFile, err := os.OpenFile("logs.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 	if err != nil {
-		panic(err)
+		log.Fatalf("[error] opening logs file. err: %v\n", err)
+	}
+	defer logFile.Close()
+
+	if err := godotenv.Load(); err != nil {
+		errStr := "[error] loading env: " + err.Error()
+		fmt.Println(errStr)
+		logFile.WriteString(errStr + "\n")
+		os.Exit(1)
 	}
 
-	fmt.Println("Listening on", *serverIPFlag, ":", *serverPortFlag)
+	secretKey := []byte(os.Getenv("SECRET_KEY"))
 
-	buf := make([]byte, 2048)
+	serverAddr := *serverIP + ":" + *serverPort
+
+	listener, err := net.Listen("tcp", serverAddr)
+	if err != nil {
+		errStr := "[error] creating tcp listener: " + err.Error()
+		fmt.Println(errStr)
+		logFile.WriteString(errStr + "\n")
+		os.Exit(1)
+	}
+	defer listener.Close()
+
+	fmt.Println("[+] Listening on", serverAddr)
+
+	buf := make([]byte, 4096)
 
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			fmt.Println("error connecting:", err)
+			errStr := "[error] connecting: " + err.Error()
+			fmt.Println(errStr)
+			logFile.WriteString(errStr + "\n")
+			continue
 		}
 
 		for {
 			n, err := conn.Read(buf)
 			if err != nil {
-				fmt.Println("error reading from connection:", err)
+				errStr := "[error] reading from the connection: " + err.Error()
+				fmt.Println(errStr)
+				logFile.WriteString(errStr + "\n")
 				break
 			}
 
-			fmt.Println("received from client")
+			fmt.Println("received data")
 
-			go handle(buf[:n])
+			go handle(buf[:n], secretKey, logFile)
 		}
+
+		conn.Close()
 	}
-}
-
-func handle(buf []byte) {
-	nonce := buf[:chacha20poly1305.NonceSize]
-	encryptedData := buf[chacha20poly1305.NonceSize:]
-
-	aead, err := chacha20poly1305.New(secretKey)
-	if err != nil {
-		fmt.Println("error creating aead:", err)
-		return
-	}
-
-	decryptedData, err := aead.Open(nil, nonce, encryptedData, nil)
-	if err != nil {
-		fmt.Println("error decrypting:", err)
-		return
-	}
-
-	fmt.Println("decrypted data:", string(decryptedData))
 }
