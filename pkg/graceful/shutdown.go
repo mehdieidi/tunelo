@@ -1,4 +1,4 @@
-package main
+package graceful
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"syscall"
 )
 
-func handleGracefulShutdown() {
+func ShutdownHandler() {
 	ctx, stop := signal.NotifyContext(
 		context.Background(),
 		os.Interrupt,

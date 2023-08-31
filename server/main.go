@@ -11,8 +11,21 @@ import (
 )
 
 func main() {
-	serverIP := flag.String("i", "127.0.0.1", "Server IP address.")
-	serverPort := flag.String("p", "23230", "Server port.")
+	wireguardPort := flag.String(
+		"wp",
+		"51820",
+		"The wireguard port.",
+	)
+	serverIP := flag.String(
+		"i",
+		"127.0.0.1",
+		"Server IP address.",
+	)
+	serverPort := flag.String(
+		"p",
+		"23230",
+		"Server port.",
+	)
 	flag.Parse()
 
 	logFile, err := os.OpenFile("logs.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
@@ -22,29 +35,29 @@ func main() {
 	defer logFile.Close()
 
 	if err := godotenv.Load(); err != nil {
-		errStr := "[error] loading env: " + err.Error()
+		errStr := fmt.Sprintf("[error] loading env: %v\n", err.Error())
 		fmt.Println(errStr)
-		logFile.WriteString(errStr + "\n")
+		logFile.WriteString(errStr)
 		os.Exit(1)
 	}
 
 	secretKey := []byte(os.Getenv("SECRET_KEY"))
 
-	serverAddr := *serverIP + ":" + *serverPort
-
-	wsHandler := wsHandler{
+	handler := handler{
+		wgPort:    *wireguardPort,
 		secretKey: secretKey,
 		logFile:   logFile,
 	}
 
-	http.HandleFunc("/ws", wsHandler.handleWebSocket)
+	http.HandleFunc("/ws", handler.wsHandler)
 
-	fmt.Println("[+] Listening on", serverAddr)
-	err = http.ListenAndServe(serverAddr, nil)
-	if err != nil {
-		errStr := "[error] ws listener: " + err.Error()
+	serverAddr := *serverIP + ":" + *serverPort
+	fmt.Println("[+] HTTP listener on", serverAddr)
+
+	if err = http.ListenAndServe(serverAddr, nil); err != nil {
+		errStr := fmt.Sprintf("[error] http listener: %v\n", err.Error())
 		fmt.Println(errStr)
-		logFile.WriteString(errStr + "\n")
+		logFile.WriteString(errStr)
 		os.Exit(1)
 	}
 }

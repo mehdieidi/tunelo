@@ -9,11 +9,18 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
+
+	"donatello/pkg/graceful"
 )
 
 func main() {
+	wireguardPort := flag.String(
+		"wp",
+		"51820",
+		"The wireguard port.",
+	)
 	listeningPort := flag.String(
-		"p",
+		"lp",
 		"23231",
 		"The local port that the app is listening to.",
 	)
@@ -29,6 +36,8 @@ func main() {
 	)
 	flag.Parse()
 
+	go graceful.ShutdownHandler()
+
 	logFile, err := os.OpenFile("logs.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 	if err != nil {
 		log.Fatalf("[error] opening logs file. err: %v\n", err)
@@ -36,67 +45,44 @@ func main() {
 	defer logFile.Close()
 
 	if err := godotenv.Load(); err != nil {
-		errStr := "[error] loading env: " + err.Error()
+		errStr := fmt.Sprintf("[error] loading env: %v\n", err.Error())
 		fmt.Println(errStr)
-		logFile.WriteString(errStr + "\n")
+		logFile.WriteString(errStr)
 		os.Exit(1)
 	}
 
-	secretKey := []byte(os.Getenv("SECRET_KEY"))
-
-	go handleGracefulShutdown()
-
-	wsServerAddr := fmt.Sprintf("ws://%s:%s/ws", *remoteServerIP, *remoteServerPort)
 	udpServerAddr := "127.0.0.1:" + *listeningPort
-
 	udpListener, err := net.ListenPacket("udp", udpServerAddr)
 	if err != nil {
-		errStr := "[error] creating udp listener: " + err.Error()
+		errStr := fmt.Sprintf("[error] creating udp listener: %v\n", err.Error())
 		fmt.Println(errStr)
-		logFile.WriteString(errStr + "\n")
+		logFile.WriteString(errStr)
 		os.Exit(1)
 	}
 	defer udpListener.Close()
 
 	fmt.Println("[+] UDP listener on", udpServerAddr)
 
+	wsServerAddr := fmt.Sprintf("ws://%s:%s/ws", *remoteServerIP, *remoteServerPort)
 	wsConn, _, err := websocket.DefaultDialer.Dial(wsServerAddr, nil)
 	if err != nil {
-		errStr := "[error] ws dial: " + err.Error()
+		errStr := fmt.Sprintf("[error] ws dial: %v\n", err.Error())
 		fmt.Println(errStr)
-		logFile.WriteString(errStr + "\n")
+		logFile.WriteString(errStr)
 		os.Exit(1)
 	}
 	defer wsConn.Close()
 
-	buf := make([]byte, 4096)
+	secretKey := []byte(os.Getenv("SECRET_KEY"))
 
-	for {
-		n, _, err := udpListener.ReadFrom(buf)
-		if err != nil {
-			errStr := "[error] reading data from the udp conn: " + err.Error()
-			fmt.Println(errStr)
-			logFile.WriteString(errStr + "\n")
-			continue
-		}
-
-		fmt.Println("received from udp conn:", string(buf))
-
-		encryptedData, err := encrypt(buf[:n], secretKey)
-		if err != nil {
-			fmt.Println(err)
-			logFile.WriteString(err.Error() + "\n")
-			continue
-		}
-
-		err = wsConn.WriteMessage(websocket.BinaryMessage, encryptedData)
-		if err != nil {
-			errStr := "[error] ws write: " + err.Error()
-			fmt.Println(errStr)
-			logFile.WriteString(errStr + "\n")
-			continue
-		}
-
-		logFile.WriteString("[info] data just flew away!" + "\n")
+	handler := handler{
+		wgPort:      *wireguardPort,
+		wsConn:      wsConn,
+		udpListener: udpListener,
+		secretKey:   secretKey,
+		logFile:     logFile,
 	}
+
+	go handler.wsReadHandler()
+	go handler.udpReadHandler()
 }

@@ -1,16 +1,15 @@
 package main
 
 import (
+	"donatello/pkg/xcrypto"
 	"fmt"
 	"net/http"
 	"os"
 
-	"golang.org/x/crypto/chacha20poly1305"
-
 	"github.com/gorilla/websocket"
 )
 
-var upgrader = websocket.Upgrader{
+var wsUpgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
@@ -18,50 +17,43 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-type wsHandler struct {
+type handler struct {
+	wgPort    string
 	secretKey []byte
 	logFile   *os.File
+	wsConn    *websocket.Conn
 }
 
-func (wh *wsHandler) handleWebSocket(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
+func (h *handler) wsHandler(w http.ResponseWriter, r *http.Request) {
+	conn, err := wsUpgrader.Upgrade(w, r, nil)
 	if err != nil {
-		errStr := "[error] ws upgrade: " + err.Error()
+		errStr := fmt.Sprintf("[error] ws upgrade: %v\n", err.Error())
 		fmt.Println(errStr)
-		wh.logFile.WriteString(errStr + "\n")
+		h.logFile.WriteString(errStr)
 		return
 	}
 	defer conn.Close()
 
+	h.wsConn = conn
+
 	for {
 		_, buf, err := conn.ReadMessage()
 		if err != nil {
-			errStr := "[error] ws read: " + err.Error()
+			errStr := fmt.Sprintf("[error] ws read: %v\n", err.Error())
 			fmt.Println(errStr)
-			wh.logFile.WriteString(errStr + "\n")
+			h.logFile.WriteString(errStr)
 			continue
 		}
 
-		nonce := buf[:chacha20poly1305.NonceSize]
-		encryptedData := buf[chacha20poly1305.NonceSize:]
-
-		aead, err := chacha20poly1305.New(wh.secretKey)
+		decryptedData, err := xcrypto.Decrypt(buf, h.secretKey)
 		if err != nil {
-			errStr := "[error] creating aead: " + err.Error()
-			fmt.Println(errStr)
-			wh.logFile.WriteString(errStr + "\n")
+			fmt.Println(err)
+			h.logFile.WriteString(err.Error() + "\n")
 			continue
 		}
 
-		decryptedData, err := aead.Open(nil, nonce, encryptedData, nil)
-		if err != nil {
-			errStr := "[error] decrypting: " + err.Error()
-			fmt.Println(errStr)
-			wh.logFile.WriteString(errStr + "\n")
-			continue
-		}
+		fmt.Println("decrypted data from ws:", string(decryptedData))
 
-		fmt.Println("decrypted data:", string(decryptedData))
-		sendToWireguard(decryptedData)
+		h.sendToWireguard(decryptedData)
 	}
 }
