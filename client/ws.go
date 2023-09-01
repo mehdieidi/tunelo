@@ -16,14 +16,14 @@ func (h *handler) wsReadHandler() {
 			continue
 		}
 
+		fmt.Println("[info] read data from ws.")
+
 		decryptedData, err := xcrypto.Decrypt(msg, h.secretKey)
 		if err != nil {
 			fmt.Println(err)
 			h.logFile.WriteString(err.Error() + "\n")
 			continue
 		}
-
-		fmt.Println("msg from ws:", decryptedData)
 
 		h.sendToWireguard(decryptedData)
 	}

@@ -20,7 +20,7 @@ func (h *handler) udpReadHandler() {
 			break
 		}
 
-		fmt.Println("received from udp conn:", string(buf))
+		fmt.Println("[info] read data from udp")
 
 		encryptedData, err := xcrypto.Encrypt(buf[:n], h.secretKey)
 		if err != nil {
@@ -37,6 +37,6 @@ func (h *handler) udpReadHandler() {
 			break
 		}
 
-		h.logFile.WriteString("[info] data sent on ws.\n")
+		h.logFile.WriteString("[info] data sent to ws.\n")
 	}
 }

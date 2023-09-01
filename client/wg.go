@@ -18,7 +18,9 @@ func (h *handler) sendToWireguard(data []byte) {
 		h.logFile.WriteString(errStr)
 		return
 	}
-	defer conn.Close()
+	// defer conn.Close()
+
+	fmt.Println("[info] dialed wg.")
 
 	_, err = conn.Write(data)
 	if err != nil {
@@ -30,7 +32,7 @@ func (h *handler) sendToWireguard(data []byte) {
 
 	fmt.Println("[info] data sent to wg.")
 
-	h.readFromWireguard(conn)
+	go h.readFromWireguard(conn)
 }
 
 func (h *handler) readFromWireguard(conn net.Conn) {
@@ -44,6 +46,8 @@ func (h *handler) readFromWireguard(conn net.Conn) {
 			h.logFile.WriteString(errStr)
 			break
 		}
+
+		fmt.Println("[info] read data response from wg.")
 
 		encryptedData, err := xcrypto.Encrypt(buf[:n], h.secretKey)
 		if err != nil {
@@ -60,4 +64,6 @@ func (h *handler) readFromWireguard(conn net.Conn) {
 			break
 		}
 	}
+
+	conn.Close()
 }
