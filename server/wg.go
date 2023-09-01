@@ -32,7 +32,7 @@ func (h *handler) sendToWireguard(data []byte) {
 }
 
 func (h *handler) readFromWireguard(conn net.Conn) {
-	buf := make([]byte, 1380)
+	buf := make([]byte, 1024)
 
 	for {
 		n, err := conn.Read(buf)
