@@ -45,14 +45,14 @@ func (h *handler) wsHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
+		fmt.Println("[info] read from ws.")
+
 		decryptedData, err := xcrypto.Decrypt(buf, h.secretKey)
 		if err != nil {
 			fmt.Println(err)
 			h.logFile.WriteString(err.Error() + "\n")
 			continue
 		}
-
-		fmt.Println("decrypted data from ws:", string(decryptedData))
 
 		h.sendToWireguard(decryptedData)
 	}
