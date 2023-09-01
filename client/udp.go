@@ -17,7 +17,7 @@ func (h *handler) udpReadHandler() {
 			errStr := fmt.Sprintf("[error] reading data from the udp conn: %v\n", err.Error())
 			fmt.Println(errStr)
 			h.logFile.WriteString(errStr)
-			continue
+			break
 		}
 
 		fmt.Println("received from udp conn:", string(buf))
@@ -26,7 +26,7 @@ func (h *handler) udpReadHandler() {
 		if err != nil {
 			fmt.Println(err)
 			h.logFile.WriteString(err.Error() + "\n")
-			continue
+			break
 		}
 
 		err = h.wsConn.WriteMessage(websocket.BinaryMessage, encryptedData)
@@ -34,7 +34,7 @@ func (h *handler) udpReadHandler() {
 			errStr := fmt.Sprintf("[error] ws write: %v\n", err.Error())
 			fmt.Println(errStr)
 			h.logFile.WriteString(errStr)
-			continue
+			break
 		}
 
 		h.logFile.WriteString("[info] data sent on ws.\n")

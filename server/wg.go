@@ -30,7 +30,7 @@ func (h *handler) sendToWireguard(data []byte) {
 
 	fmt.Println("[info] data sent to wg.")
 
-	go h.readFromWireguard(conn)
+	h.readFromWireguard(conn)
 }
 
 func (h *handler) readFromWireguard(conn net.Conn) {
@@ -42,7 +42,7 @@ func (h *handler) readFromWireguard(conn net.Conn) {
 			errStr := fmt.Sprintf("[error] reading from wg conn: %v\n", err.Error())
 			fmt.Println(errStr)
 			h.logFile.WriteString(errStr)
-			continue
+			break
 		}
 
 		encryptedData, err := xcrypto.Encrypt(buf[:n], h.secretKey)
@@ -50,14 +50,14 @@ func (h *handler) readFromWireguard(conn net.Conn) {
 			errStr := fmt.Sprintf("[error] encrypting: %v\n", err.Error())
 			fmt.Println(errStr)
 			h.logFile.WriteString(errStr)
-			continue
+			break
 		}
 
 		if err := h.wsConn.WriteMessage(websocket.BinaryMessage, encryptedData); err != nil {
 			errStr := fmt.Sprintf("[error] writing data to ws: %v\n", err.Error())
 			fmt.Println(errStr)
 			h.logFile.WriteString(errStr)
-			continue
+			break
 		}
 	}
 }

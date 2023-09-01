@@ -36,8 +36,6 @@ func main() {
 	)
 	flag.Parse()
 
-	go graceful.ShutdownHandler()
-
 	logFile, err := os.OpenFile("logs.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 	if err != nil {
 		log.Fatalf("[error] opening logs file. err: %v\n", err)
@@ -61,7 +59,7 @@ func main() {
 	}
 	defer udpListener.Close()
 
-	fmt.Println("[+] UDP listener on", udpServerAddr)
+	fmt.Println("[+] UDP listening to", udpServerAddr)
 
 	wsServerAddr := fmt.Sprintf("ws://%s:%s/ws", *remoteServerIP, *remoteServerPort)
 	wsConn, _, err := websocket.DefaultDialer.Dial(wsServerAddr, nil)
@@ -72,6 +70,8 @@ func main() {
 		os.Exit(1)
 	}
 	defer wsConn.Close()
+
+	fmt.Println("[+] WS connected:", wsServerAddr)
 
 	secretKey := []byte(os.Getenv("SECRET_KEY"))
 
@@ -85,4 +85,6 @@ func main() {
 
 	go handler.wsReadHandler()
 	go handler.udpReadHandler()
+
+	graceful.ShutdownHandler()
 }

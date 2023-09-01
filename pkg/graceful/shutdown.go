@@ -15,16 +15,11 @@ func ShutdownHandler() {
 		syscall.SIGTERM,
 		syscall.SIGQUIT,
 	)
+	defer stop()
 
-	go func() {
-		<-ctx.Done()
+	<-ctx.Done()
 
-		fmt.Println("\n[-] shutdown signal received")
+	fmt.Println("\n[-] shutdown signal received")
 
-		defer func() {
-			stop()
-		}()
-
-		os.Exit(0)
-	}()
+	os.Exit(0)
 }
