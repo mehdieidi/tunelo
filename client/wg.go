@@ -11,6 +11,7 @@ import (
 
 func (h *handler) sendToWireguard(data []byte) {
 	wgAddr := "127.0.0.1" + ":" + h.wgPort
+
 	conn, err := net.Dial("udp", wgAddr)
 	if err != nil {
 		errStr := fmt.Sprintf("[error] dialing wg: %v\n", err.Error())
@@ -18,9 +19,10 @@ func (h *handler) sendToWireguard(data []byte) {
 		h.logFile.WriteString(errStr)
 		return
 	}
-	// defer conn.Close()
 
 	fmt.Println("[info] dialed wg.")
+
+	go h.readFromWireguard(conn)
 
 	_, err = conn.Write(data)
 	if err != nil {
@@ -31,8 +33,6 @@ func (h *handler) sendToWireguard(data []byte) {
 	}
 
 	fmt.Println("[info] data sent to wg.")
-
-	go h.readFromWireguard(conn)
 }
 
 func (h *handler) readFromWireguard(conn net.Conn) {
@@ -49,21 +49,27 @@ func (h *handler) readFromWireguard(conn net.Conn) {
 
 		fmt.Println("[info] read data response from wg.")
 
-		encryptedData, err := xcrypto.Encrypt(buf[:n], h.secretKey)
-		if err != nil {
-			errStr := fmt.Sprintf("[error] encrypting: %v\n", err.Error())
-			fmt.Println(errStr)
-			h.logFile.WriteString(errStr)
-			break
-		}
-
-		if err := h.wsConn.WriteMessage(websocket.BinaryMessage, encryptedData); err != nil {
-			errStr := fmt.Sprintf("[error] writing data to ws: %v\n", err.Error())
-			fmt.Println(errStr)
-			h.logFile.WriteString(errStr)
-			break
-		}
+		go h.wgMsgHandler(buf[:n])
 	}
 
 	conn.Close()
+}
+
+func (h *handler) wgMsgHandler(msg []byte) {
+	encryptedData, err := xcrypto.Encrypt(msg, h.secretKey)
+	if err != nil {
+		errStr := fmt.Sprintf("[error] encrypting: %v\n", err.Error())
+		fmt.Println(errStr)
+		h.logFile.WriteString(errStr)
+		return
+	}
+
+	if err := h.wsConn.WriteMessage(websocket.BinaryMessage, encryptedData); err != nil {
+		errStr := fmt.Sprintf("[error] writing data to ws: %v\n", err.Error())
+		fmt.Println(errStr)
+		h.logFile.WriteString(errStr)
+		return
+	}
+
+	fmt.Println("[info] wg response sent to ws.")
 }

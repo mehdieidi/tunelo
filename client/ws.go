@@ -18,13 +18,17 @@ func (h *handler) wsReadHandler() {
 
 		fmt.Println("[info] read data from ws.")
 
-		decryptedData, err := xcrypto.Decrypt(msg, h.secretKey)
-		if err != nil {
-			fmt.Println(err)
-			h.logFile.WriteString(err.Error() + "\n")
-			continue
-		}
-
-		h.sendToWireguard(decryptedData)
+		go h.wsMsgHandler(msg)
 	}
+}
+
+func (h *handler) wsMsgHandler(msg []byte) {
+	decryptedData, err := xcrypto.Decrypt(msg, h.secretKey)
+	if err != nil {
+		fmt.Println(err)
+		h.logFile.WriteString(err.Error() + "\n")
+		return
+	}
+
+	h.sendToWireguard(decryptedData)
 }

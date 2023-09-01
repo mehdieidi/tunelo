@@ -22,21 +22,24 @@ func (h *handler) udpReadHandler() {
 
 		fmt.Println("[info] read data from udp")
 
-		encryptedData, err := xcrypto.Encrypt(buf[:n], h.secretKey)
-		if err != nil {
-			fmt.Println(err)
-			h.logFile.WriteString(err.Error() + "\n")
-			break
-		}
-
-		err = h.wsConn.WriteMessage(websocket.BinaryMessage, encryptedData)
-		if err != nil {
-			errStr := fmt.Sprintf("[error] ws write: %v\n", err.Error())
-			fmt.Println(errStr)
-			h.logFile.WriteString(errStr)
-			break
-		}
-
-		h.logFile.WriteString("[info] data sent to ws.\n")
+		go h.udpMsgHandler(buf[:n])
 	}
+}
+
+func (h *handler) udpMsgHandler(msg []byte) {
+	encryptedData, err := xcrypto.Encrypt(msg, h.secretKey)
+	if err != nil {
+		fmt.Println(err)
+		h.logFile.WriteString(err.Error() + "\n")
+		return
+	}
+
+	if err = h.wsConn.WriteMessage(websocket.BinaryMessage, encryptedData); err != nil {
+		errStr := fmt.Sprintf("[error] ws write: %v\n", err.Error())
+		fmt.Println(errStr)
+		h.logFile.WriteString(errStr)
+		return
+	}
+
+	h.logFile.WriteString("[info] data sent to ws.\n")
 }
