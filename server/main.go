@@ -14,7 +14,7 @@ func main() {
 	wireguardPort := flag.String(
 		"wp",
 		"51820",
-		"The wireguard port.",
+		"WireGuard port.",
 	)
 	serverIP := flag.String(
 		"i",
@@ -42,9 +42,17 @@ func main() {
 	}
 
 	secretKey := []byte(os.Getenv("SECRET_KEY"))
+	if string(secretKey) == "" {
+		errStr := "[error] secret key cannot be empty\n"
+		fmt.Println(errStr)
+		logFile.WriteString(errStr)
+		os.Exit(1)
+	}
+
+	wgAddr := "127.0.0.1:" + *wireguardPort
 
 	handler := handler{
-		wgPort:    *wireguardPort,
+		wgAddr:    wgAddr,
 		secretKey: secretKey,
 		logFile:   logFile,
 	}
@@ -52,7 +60,7 @@ func main() {
 	http.HandleFunc("/ws", handler.wsHandler)
 
 	serverAddr := *serverIP + ":" + *serverPort
-	fmt.Println("[+] HTTP listener on", serverAddr)
+	fmt.Println("[+] HTTP server listening to", serverAddr)
 
 	if err = http.ListenAndServe(serverAddr, nil); err != nil {
 		errStr := fmt.Sprintf("[error] http listener: %v\n", err.Error())

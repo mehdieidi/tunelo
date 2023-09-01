@@ -17,6 +17,12 @@ var wsUpgrader = websocket.Upgrader{
 	},
 }
 
+func (h *handler) sendToWS(data []byte) error {
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
+	return h.wsConn.WriteMessage(websocket.BinaryMessage, data)
+}
+
 func (h *handler) wsHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := wsUpgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -35,7 +41,7 @@ func (h *handler) wsHandler(w http.ResponseWriter, r *http.Request) {
 			errStr := fmt.Sprintf("[error] ws read: %v\n", err.Error())
 			fmt.Println(errStr)
 			h.logFile.WriteString(errStr)
-			continue
+			break
 		}
 
 		fmt.Println("[info] read from ws.")

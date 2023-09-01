@@ -7,32 +7,31 @@ import (
 	"net"
 	"os"
 
-	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
 
 	"donatello/pkg/graceful"
 )
 
 func main() {
-	wireguardPort := flag.String(
+	wireGuardPort := flag.String(
 		"wp",
 		"51820",
-		"The wireguard port.",
+		"WireGuard port.",
 	)
 	listeningPort := flag.String(
 		"lp",
 		"23231",
-		"The local port that the app is listening to.",
+		"Local port that the app is listening to.",
 	)
 	remoteServerIP := flag.String(
 		"ri",
 		"127.0.0.1",
-		"The remote server IP.",
+		"Remote server IP.",
 	)
 	remoteServerPort := flag.String(
 		"rp",
 		"23230",
-		"The remote server port.",
+		"Remote server port.",
 	)
 	flag.Parse()
 
@@ -59,10 +58,10 @@ func main() {
 	}
 	defer udpListener.Close()
 
-	fmt.Println("[+] UDP listening to", udpServerAddr)
+	fmt.Println("[+] UDP server listening to", udpServerAddr)
 
 	wsServerAddr := fmt.Sprintf("ws://%s:%s/ws", *remoteServerIP, *remoteServerPort)
-	wsConn, _, err := websocket.DefaultDialer.Dial(wsServerAddr, nil)
+	wsConn, err := connectServerWS(wsServerAddr)
 	if err != nil {
 		errStr := fmt.Sprintf("[error] ws dial: %v\n", err.Error())
 		fmt.Println(errStr)
@@ -74,13 +73,22 @@ func main() {
 	fmt.Println("[+] WS connected:", wsServerAddr)
 
 	secretKey := []byte(os.Getenv("SECRET_KEY"))
+	if string(secretKey) == "" {
+		errStr := "[error] secret key cannot be empty."
+		fmt.Println(errStr)
+		logFile.WriteString(errStr)
+		os.Exit(1)
+	}
+
+	wgAddr := "127.0.0.1" + ":" + *wireGuardPort
 
 	handler := handler{
-		wgPort:      *wireguardPort,
-		wsConn:      wsConn,
-		udpListener: udpListener,
-		secretKey:   secretKey,
-		logFile:     logFile,
+		wsServerAddr: wsServerAddr,
+		wgAddr:       wgAddr,
+		wsConn:       wsConn,
+		udpListener:  udpListener,
+		secretKey:    secretKey,
+		logFile:      logFile,
 	}
 
 	go handler.wsReadHandler()

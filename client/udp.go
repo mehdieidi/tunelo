@@ -3,8 +3,6 @@ package main
 import (
 	"fmt"
 
-	"github.com/gorilla/websocket"
-
 	"donatello/pkg/xcrypto"
 )
 
@@ -34,7 +32,7 @@ func (h *handler) udpMsgHandler(msg []byte) {
 		return
 	}
 
-	if err = h.wsConn.WriteMessage(websocket.BinaryMessage, encryptedData); err != nil {
+	if err = h.sendToWS(encryptedData); err != nil {
 		errStr := fmt.Sprintf("[error] ws write: %v\n", err.Error())
 		fmt.Println(errStr)
 		h.logFile.WriteString(errStr)

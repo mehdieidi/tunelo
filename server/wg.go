@@ -4,15 +4,11 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/gorilla/websocket"
-
 	"donatello/pkg/xcrypto"
 )
 
 func (h *handler) sendToWireguard(data []byte) {
-	wgAddr := "127.0.0.1" + ":" + h.wgPort
-
-	conn, err := net.Dial("udp", wgAddr)
+	conn, err := net.Dial("udp", h.wgAddr)
 	if err != nil {
 		errStr := fmt.Sprintf("[error] dialing wg: %v\n", err.Error())
 		fmt.Println(errStr)
@@ -64,7 +60,7 @@ func (h *handler) wgResponseHandler(msg []byte) {
 		return
 	}
 
-	if err := h.wsConn.WriteMessage(websocket.BinaryMessage, encryptedData); err != nil {
+	if err := h.sendToWS(encryptedData); err != nil {
 		errStr := fmt.Sprintf("[error] writing data to ws: %v\n", err.Error())
 		fmt.Println(errStr)
 		h.logFile.WriteString(errStr)
