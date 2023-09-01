@@ -7,7 +7,7 @@ import (
 )
 
 func (h *handler) udpReadHandler() {
-	buf := make([]byte, 4096)
+	buf := make([]byte, 1380)
 
 	for {
 		n, _, err := h.udpListener.ReadFrom(buf)
