@@ -26,20 +26,20 @@ func Run(cfg Config) {
 	)
 
 	if err := udp.Listen(); err != nil {
-		cfg.Logger.Error(fmt.Errorf("[error] creating udp listener: %v", err), nil)
+		cfg.Logger.Error(fmt.Errorf("creating udp listener: %v", err), nil)
 	}
 	defer udp.Conn.Close()
 
-	cfg.Logger.Info("[info] UDP server listening to "+clientAddr, nil)
+	cfg.Logger.Info("UDP server listening to "+clientAddr, nil)
 
 	wsConn, err := ws.Dial(wsServerAddr)
 	if err != nil {
-		cfg.Logger.Error(fmt.Errorf("[error] dialing ws: %v", err), nil)
+		cfg.Logger.Error(fmt.Errorf("dialing ws: %v", err), nil)
 		os.Exit(1)
 	}
 	defer wsConn.Close(websocket.StatusInternalError, "")
 
-	cfg.Logger.Info("[info] WebSocket connected: "+wsServerAddr, nil)
+	cfg.Logger.Info("WebSocket connected: "+wsServerAddr, nil)
 
 	websocket := ws.New(
 		serverAddr,

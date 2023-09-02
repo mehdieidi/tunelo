@@ -26,7 +26,7 @@ func Run(cfg Config) {
 	ws.MsgHandlerFunc = wire.WebSocketMsgHandler
 
 	if err := wire.WebSocket.ListenAndServe(); err != nil {
-		cfg.Logger.Error(fmt.Errorf("[error] websocket listen and serve: %v", err), nil)
+		cfg.Logger.Error(fmt.Errorf("websocket listen and serve: %v", err), nil)
 		os.Exit(1)
 	}
 }

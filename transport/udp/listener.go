@@ -8,7 +8,7 @@ import (
 func (u *UDP) Listen() error {
 	conn, err := net.ListenPacket("udp", u.ServerAddr)
 	if err != nil {
-		u.Logger.Error(fmt.Errorf("[error] creating udp listener: %v", err), nil)
+		u.Logger.Error(fmt.Errorf("creating udp listener: %v", err), nil)
 		return err
 	}
 

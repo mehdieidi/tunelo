@@ -9,7 +9,7 @@ import (
 
 	"tunelo/cmd/client"
 	"tunelo/cmd/server"
-	"tunelo/pkg/logger/zerolog"
+	"tunelo/pkg/logger/plain"
 )
 
 func main() {
@@ -66,16 +66,16 @@ func main() {
 
 	flag.Parse()
 
-	logger := zerolog.New(os.Stdout)
+	logger := plain.New(os.Stdout)
 
 	if err := godotenv.Load(); err != nil {
-		logger.Error(fmt.Errorf("[error] loading env: %v", err), nil)
+		logger.Error(fmt.Errorf("loading env: %v", err), nil)
 		os.Exit(1)
 	}
 
 	secretKey := []byte(os.Getenv("SECRET_KEY"))
 	if string(secretKey) == "" {
-		logger.Error(fmt.Errorf("[error] secret key cannot be empty"), nil)
+		logger.Error(fmt.Errorf("secret key cannot be empty"), nil)
 		os.Exit(1)
 	}
 
