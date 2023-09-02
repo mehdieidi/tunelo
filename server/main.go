@@ -3,69 +3,71 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
-	"net/http"
+	"net"
 	"os"
 
 	"github.com/joho/godotenv"
+
+	"tunelo/pkg/logger/zerolog"
+	"tunelo/transport/ws"
+	"tunelo/wire"
 )
 
 func main() {
-	wireguardPort := flag.String(
-		"wp",
-		"51820",
-		"WireGuard port.",
+	var vpnPort string
+	var serverIP string
+	var serverPort string
+
+	flag.StringVar(
+		&vpnPort,
+		"vpn_port",
+		"23233",
+		"Port number that the VPN (e.g. WireGuard) listens to.",
 	)
-	serverIP := flag.String(
+	flag.StringVar(
+		&serverIP,
 		"i",
 		"127.0.0.1",
 		"Server IP address.",
 	)
-	serverPort := flag.String(
+	flag.StringVar(
+		&serverPort,
 		"p",
 		"23230",
-		"Server port.",
+		"Server Port number.",
 	)
 	flag.Parse()
 
-	logFile, err := os.OpenFile("logs.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
-	if err != nil {
-		log.Fatalf("[error] opening logs file. err: %v\n", err)
-	}
-	defer logFile.Close()
+	logger := zerolog.New(os.Stdout)
 
 	if err := godotenv.Load(); err != nil {
-		errStr := fmt.Sprintf("[error] loading env: %v\n", err.Error())
-		fmt.Println(errStr)
-		logFile.WriteString(errStr)
+		logger.Error(fmt.Errorf("[error] loading env: %v", err), nil)
 		os.Exit(1)
 	}
 
 	secretKey := []byte(os.Getenv("SECRET_KEY"))
 	if string(secretKey) == "" {
-		errStr := "[error] secret key cannot be empty\n"
-		fmt.Println(errStr)
-		logFile.WriteString(errStr)
+		logger.Error(fmt.Errorf("[error] secret key cannot be empty"), nil)
 		os.Exit(1)
 	}
 
-	wgAddr := "127.0.0.1:" + *wireguardPort
+	vpnAddr := net.JoinHostPort("127.0.0.1", vpnPort)
+	serverAddr := net.JoinHostPort(serverIP, serverPort)
 
-	handler := handler{
-		wgAddr:    wgAddr,
-		secretKey: secretKey,
-		logFile:   logFile,
-	}
+	ws := ws.New(serverAddr, logger, nil)
 
-	http.HandleFunc("/ws", handler.wsHandler)
+	wire := wire.New(
+		ws,
+		secretKey,
+		logger,
+		vpnAddr,
+		1450,
+	)
 
-	serverAddr := *serverIP + ":" + *serverPort
-	fmt.Println("[+] HTTP server listening to", serverAddr)
+	ws.MsgHandlerFunc = wire.WebSocketMsgHandler
 
-	if err = http.ListenAndServe(serverAddr, nil); err != nil {
-		errStr := fmt.Sprintf("[error] http listener: %v\n", err.Error())
-		fmt.Println(errStr)
-		logFile.WriteString(errStr)
+	if err := wire.WebSocket.ListenAndServe(); err != nil {
+		logger.Error(fmt.Errorf("[error] websocket listen and serve: %v", err), nil)
 		os.Exit(1)
 	}
 }

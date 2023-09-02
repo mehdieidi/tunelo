@@ -20,3 +20,4 @@ client/client
 server/server
 dummy_wg/dummywg
 dummy_wg/dummy_wg
+testdir
