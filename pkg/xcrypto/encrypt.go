@@ -10,12 +10,12 @@ import (
 func Encrypt(plain, secret []byte) ([]byte, error) {
 	nonce := make([]byte, chacha20poly1305.NonceSize)
 	if _, err := rand.Read(nonce); err != nil {
-		return nil, fmt.Errorf("error generating nonce: " + err.Error())
+		return nil, fmt.Errorf("error generating nonce: %v", err)
 	}
 
 	aead, err := chacha20poly1305.New(secret)
 	if err != nil {
-		return nil, fmt.Errorf("error creating aead: " + err.Error())
+		return nil, fmt.Errorf("error creating aead: %v", err)
 	}
 
 	encryptedData := aead.Seal(nil, nonce, plain, nil)
