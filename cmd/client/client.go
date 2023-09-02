@@ -30,7 +30,7 @@ func Run(cfg Config) {
 	}
 	defer udp.Conn.Close()
 
-	cfg.Logger.Info("UDP server listening to "+clientAddr, nil)
+	cfg.Logger.Info("UDP server listening on "+clientAddr, nil)
 
 	wsConn, err := ws.Dial(wsServerAddr)
 	if err != nil {
