@@ -40,7 +40,7 @@ func main() {
 	)
 	flag.StringVar(
 		&serverPort,
-		"p",
+		"server_port",
 		"23230",
 		"Server port of the tunnel.",
 	)
