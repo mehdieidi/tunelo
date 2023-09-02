@@ -21,16 +21,16 @@ func (z plain) PanicHandler() {
 }
 
 func (z plain) Info(msg string, args logger.Args) {
-	msg = fmt.Sprintf("[info] %s\n", msg)
+	msg = fmt.Sprintf("[info] %s", msg)
 	fmt.Println(msg)
 }
 
 func (z plain) Error(err error, args logger.Args) {
-	msg := fmt.Sprintf("[error] %s\n", err.Error())
+	msg := fmt.Sprintf("[error] %s", err.Error())
 	fmt.Println(msg)
 }
 
 func (z plain) Panic(args logger.Args) {
-	msg := fmt.Sprintf("[panic] %s\n", string(debug.Stack()))
+	msg := fmt.Sprintf("[panic] %s", string(debug.Stack()))
 	fmt.Println(msg)
 }
