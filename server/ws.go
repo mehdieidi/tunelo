@@ -6,7 +6,7 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	"donatello/pkg/xcrypto"
+	"tunelo/pkg/xcrypto"
 )
 
 var wsUpgrader = websocket.Upgrader{
