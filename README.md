@@ -1,5 +1,4 @@
 # tunelo
 
-Tunnel UDP traffic (like WireGuard) over websocket.
-
-wg <-udp-> client <-ws-> server <-udp-> wg
+__tunelo__ encrypts and tunnels UDP traffic (e.g. WireGuard) over a transport protocol like websocket or
+TCP. Helping to use VPNs in restricted areas.
