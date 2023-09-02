@@ -19,6 +19,7 @@ func main() {
 	var remoteServerPort string
 	var serverIP string
 	var serverPort string
+	var bufSize int
 	var clientMode bool
 
 	flag.StringVar(
@@ -57,6 +58,12 @@ func main() {
 		"23230",
 		"Server port number that the tunnel server will listen to.",
 	)
+	flag.IntVar(
+		&bufSize,
+		"buf",
+		1450,
+		"Buffer size.",
+	)
 	flag.BoolVar(
 		&clientMode,
 		"c",
@@ -87,6 +94,7 @@ func main() {
 			RemoteServerPort: remoteServerPort,
 			SecretKey:        secretKey,
 			Logger:           logger,
+			BufSize:          bufSize,
 		}
 		client.Run(cfg)
 	} else {
@@ -96,6 +104,7 @@ func main() {
 			ServerPort: serverPort,
 			SecretKey:  secretKey,
 			Logger:     logger,
+			BufSize:    bufSize,
 		}
 		server.Run(cfg)
 	}

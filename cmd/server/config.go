@@ -8,4 +8,5 @@ type Config struct {
 	ServerPort string
 	SecretKey  []byte
 	Logger     logger.Logger
+	BufSize    int
 }

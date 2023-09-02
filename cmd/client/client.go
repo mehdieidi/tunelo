@@ -23,6 +23,7 @@ func Run(cfg Config) {
 		clientAddr,
 		cfg.Logger,
 		nil,
+		cfg.BufSize,
 	)
 
 	if err := udp.Listen(); err != nil {
@@ -53,7 +54,7 @@ func Run(cfg Config) {
 		cfg.SecretKey,
 		cfg.Logger,
 		vpnAddr,
-		1450,
+		cfg.BufSize,
 	)
 
 	websocket.MsgHandlerFunc = wire.WebSocketMsgHandler

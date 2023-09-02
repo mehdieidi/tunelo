@@ -3,7 +3,7 @@ package udp
 import "fmt"
 
 func (u *UDP) UDPReadHandler() {
-	buf := make([]byte, 1450)
+	buf := make([]byte, u.BufSize)
 
 	for {
 		n, _, err := u.Conn.ReadFrom(buf)

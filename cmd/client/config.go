@@ -9,4 +9,5 @@ type Config struct {
 	RemoteServerPort string
 	SecretKey        []byte
 	Logger           logger.Logger
+	BufSize          int
 }

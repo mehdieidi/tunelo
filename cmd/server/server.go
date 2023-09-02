@@ -20,7 +20,7 @@ func Run(cfg Config) {
 		cfg.SecretKey,
 		cfg.Logger,
 		vpnAddr,
-		1450,
+		cfg.BufSize,
 	)
 
 	ws.MsgHandlerFunc = wire.WebSocketMsgHandler
