@@ -20,7 +20,7 @@ func main() {
 	var serverIP string
 	var serverPort string
 	var bufSize int
-	var clientMode bool
+	var serverMode bool
 
 	flag.StringVar(
 		&vpnPort,
@@ -65,10 +65,10 @@ func main() {
 		"Buffer size.",
 	)
 	flag.BoolVar(
-		&clientMode,
-		"c",
+		&serverMode,
+		"s",
 		false,
-		"Run in client mode. The default is server mode.",
+		"Run in server mode. The default is client mode.",
 	)
 
 	flag.Parse()
@@ -86,7 +86,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	if clientMode {
+	if serverMode {
+		cfg := server.Config{
+			VPNPort:    vpnPort,
+			ServerIP:   serverIP,
+			ServerPort: serverPort,
+			SecretKey:  secretKey,
+			Logger:     logger,
+			BufSize:    bufSize,
+		}
+		server.Run(cfg)
+	} else {
 		cfg := client.Config{
 			VPNPort:          vpnPort,
 			ClientPort:       clientPort,
@@ -97,15 +107,5 @@ func main() {
 			BufSize:          bufSize,
 		}
 		client.Run(cfg)
-	} else {
-		cfg := server.Config{
-			VPNPort:    vpnPort,
-			ServerIP:   serverIP,
-			ServerPort: serverPort,
-			SecretKey:  secretKey,
-			Logger:     logger,
-			BufSize:    bufSize,
-		}
-		server.Run(cfg)
 	}
 }
