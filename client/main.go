@@ -3,96 +3,111 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"net"
 	"os"
 
 	"github.com/joho/godotenv"
+	"nhooyr.io/websocket"
 
 	"tunelo/pkg/graceful"
+	"tunelo/pkg/logger/zerolog"
+	"tunelo/transport/udp"
+	"tunelo/transport/ws"
+	"tunelo/wire"
 )
 
 func main() {
-	wireGuardPort := flag.String(
-		"wp",
-		"51820",
-		"WireGuard port.",
+	var vpnPort string
+	var clientPort string
+	var remoteServerIP string
+	var remoteServerPort string
+
+	flag.StringVar(
+		&vpnPort,
+		"vpn_port",
+		"23233",
+		"Port number that the VPN (e.g. WireGuard) listens to.",
 	)
-	listeningPort := flag.String(
-		"lp",
+	flag.StringVar(
+		&clientPort,
+		"l",
 		"23231",
-		"Local port that the app is listening to.",
+		"Port number that the client listens to.",
 	)
-	remoteServerIP := flag.String(
-		"ri",
+	flag.StringVar(
+		&remoteServerIP,
+		"server_ip",
 		"127.0.0.1",
 		"Remote server IP.",
 	)
-	remoteServerPort := flag.String(
-		"rp",
+	flag.StringVar(
+		&remoteServerPort,
+		"server_port",
 		"23230",
 		"Remote server port.",
 	)
 	flag.Parse()
 
-	logFile, err := os.OpenFile("logs.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
-	if err != nil {
-		log.Fatalf("[error] opening logs file. err: %v\n", err)
-	}
-	defer logFile.Close()
+	logger := zerolog.New(os.Stdout)
 
 	if err := godotenv.Load(); err != nil {
-		errStr := fmt.Sprintf("[error] loading env: %v\n", err.Error())
-		fmt.Println(errStr)
-		logFile.WriteString(errStr)
+		logger.Error(fmt.Errorf("[error] loading env: %v", err), nil)
 		os.Exit(1)
 	}
-
-	udpServerAddr := "127.0.0.1:" + *listeningPort
-	udpListener, err := net.ListenPacket("udp", udpServerAddr)
-	if err != nil {
-		errStr := fmt.Sprintf("[error] creating udp listener: %v\n", err.Error())
-		fmt.Println(errStr)
-		logFile.WriteString(errStr)
-		os.Exit(1)
-	}
-	defer udpListener.Close()
-
-	fmt.Println("[+] UDP server listening to", udpServerAddr)
-
-	wsServerAddr := fmt.Sprintf("ws://%s:%s/ws", *remoteServerIP, *remoteServerPort)
-	wsConn, err := connectServerWS(wsServerAddr)
-	if err != nil {
-		errStr := fmt.Sprintf("[error] ws dial: %v\n", err.Error())
-		fmt.Println(errStr)
-		logFile.WriteString(errStr)
-		os.Exit(1)
-	}
-	defer wsConn.Close()
-
-	fmt.Println("[+] WS connected:", wsServerAddr)
 
 	secretKey := []byte(os.Getenv("SECRET_KEY"))
 	if string(secretKey) == "" {
-		errStr := "[error] secret key cannot be empty."
-		fmt.Println(errStr)
-		logFile.WriteString(errStr)
+		logger.Error(fmt.Errorf("[error] secret key cannot be empty"), nil)
 		os.Exit(1)
 	}
 
-	wgAddr := "127.0.0.1" + ":" + *wireGuardPort
+	clientAddr := net.JoinHostPort("127.0.0.1", clientPort)
+	serverAddr := net.JoinHostPort(remoteServerIP, remoteServerPort)
+	wsServerAddr := fmt.Sprintf("ws://%s/ws", serverAddr)
+	vpnAddr := net.JoinHostPort("127.0.0.1", vpnPort)
 
-	handler := handler{
-		wsServerAddr: wsServerAddr,
-		wgAddr:       wgAddr,
-		wsConn:       wsConn,
-		udpListener:  udpListener,
-		secretKey:    secretKey,
-		logFile:      logFile,
+	udp := udp.New(
+		clientAddr,
+		logger,
+		nil,
+	)
+
+	if err := udp.Listen(); err != nil {
+		logger.Error(fmt.Errorf("[error] creating udp listener: %v", err), nil)
 	}
+	defer udp.Conn.Close()
 
-	go handler.wsReadHandler()
-	go handler.udpReadHandler()
+	logger.Info("[info] UDP server listening to "+clientAddr, nil)
+
+	wsConn, err := ws.Dial(wsServerAddr)
+	if err != nil {
+		logger.Error(fmt.Errorf("[error] dialing ws: %v", err), nil)
+		os.Exit(1)
+	}
+	defer wsConn.Close(websocket.StatusInternalError, "")
+
+	logger.Info("[info] WebSocket connected: "+wsServerAddr, nil)
+
+	websocket := ws.New(
+		serverAddr,
+		logger,
+		nil,
+	)
+	websocket.Conn = wsConn
+
+	wire := wire.New(
+		websocket,
+		secretKey,
+		logger,
+		vpnAddr,
+		1450,
+	)
+
+	websocket.MsgHandlerFunc = wire.WebSocketMsgHandler
+	udp.MsgHandlerFunc = wire.UDPMsgHandler
+
+	go websocket.Read()
+	go udp.UDPReadHandler()
 
 	graceful.ShutdownHandler()
 }

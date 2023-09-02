@@ -17,17 +17,7 @@ func (s *WebSocket) handler(w http.ResponseWriter, r *http.Request) {
 
 	s.Conn = conn
 
-	for {
-		_, buf, err := conn.Read(r.Context())
-		if err != nil {
-			s.Logger.Error(fmt.Errorf("[error] reading from ws: %v", err), nil)
-			break
-		}
-
-		s.Logger.Info("[info] data received over ws.", nil)
-
-		go s.MsgHandlerFunc(buf)
-	}
+	s.Read()
 
 	conn.Close(websocket.StatusNormalClosure, "")
 }
