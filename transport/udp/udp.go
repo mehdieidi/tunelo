@@ -4,20 +4,23 @@ import (
 	"net"
 
 	"tunelo/pkg/logger"
+	"tunelo/transport"
 )
+
+const ProtocolName = "udp"
 
 type UDP struct {
 	ServerAddr     string
 	Logger         logger.Logger
-	MsgHandlerFunc MsgHandlerFunc
-	Conn           net.PacketConn
+	MsgHandlerFunc transport.MsgHandlerFunc
+	Listener       net.PacketConn
 	BufSize        int
 }
 
 func New(
 	serverAddr string,
 	logger logger.Logger,
-	msgHandlerFunc MsgHandlerFunc,
+	msgHandlerFunc transport.MsgHandlerFunc,
 	bufSize int,
 ) *UDP {
 	return &UDP{

@@ -2,11 +2,20 @@ package udp
 
 import "fmt"
 
-func (u *UDP) UDPReadHandler() {
+func (u *UDP) Read() {
+	if u.MsgHandlerFunc == nil {
+		u.Logger.Error(fmt.Errorf("no udp msg handler registered"), nil)
+		return
+	}
+	if u.Listener == nil {
+		u.Logger.Error(fmt.Errorf("no udp listener registered"), nil)
+		return
+	}
+
 	buf := make([]byte, u.BufSize)
 
 	for {
-		n, _, err := u.Conn.ReadFrom(buf)
+		n, _, err := u.Listener.ReadFrom(buf)
 		if err != nil {
 			u.Logger.Error(fmt.Errorf("reading udp listener data: %v", err), nil)
 			break
@@ -17,7 +26,7 @@ func (u *UDP) UDPReadHandler() {
 		go u.MsgHandlerFunc(buf[:n])
 	}
 
-	u.Conn.Close()
+	u.Listener.Close()
 
-	u.Logger.Info("closed udp listener.", nil)
+	u.Logger.Info("udp listener closed.", nil)
 }

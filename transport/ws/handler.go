@@ -13,11 +13,9 @@ func (s *WebSocket) handler(w http.ResponseWriter, r *http.Request) {
 		s.Logger.Error(fmt.Errorf("accepting websocket connection: %v", err), nil)
 		return
 	}
-	defer conn.Close(websocket.StatusInternalError, "")
+	defer conn.Close(websocket.StatusNormalClosure, "")
 
 	s.Conn = conn
 
 	s.Read()
-
-	conn.Close(websocket.StatusNormalClosure, "")
 }

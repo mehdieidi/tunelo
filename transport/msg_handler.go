@@ -1,3 +1,3 @@
-package ws
+package transport
 
 type MsgHandlerFunc func([]byte)

@@ -15,8 +15,6 @@ import (
 func main() {
 	var vpnPort string
 	var clientPort string
-	var remoteServerIP string
-	var remoteServerPort string
 	var serverIP string
 	var serverPort string
 	var bufSize int
@@ -26,37 +24,25 @@ func main() {
 		&vpnPort,
 		"vpn_port",
 		"23233",
-		"Port number that the VPN (e.g. WireGuard) listens to.",
+		"Port number that the VPN (e.g. WireGuard) is listening to.",
 	)
 	flag.StringVar(
 		&clientPort,
-		"l",
+		"client_port",
 		"23231",
 		"Port number that the client listens to.",
 	)
 	flag.StringVar(
-		&remoteServerIP,
+		&serverIP,
 		"server_ip",
 		"127.0.0.1",
-		"Remote server IP used by the client to tunnel data.",
-	)
-	flag.StringVar(
-		&remoteServerPort,
-		"server_port",
-		"23230",
-		"Remote server port used by the client to tunnel data.",
-	)
-	flag.StringVar(
-		&serverIP,
-		"i",
-		"127.0.0.1",
-		"Server IP address of the tunnel.",
+		"Server IP of the tunnel.",
 	)
 	flag.StringVar(
 		&serverPort,
 		"p",
 		"23230",
-		"Server port number that the tunnel server will listen to.",
+		"Server port of the tunnel.",
 	)
 	flag.IntVar(
 		&bufSize,
@@ -70,10 +56,9 @@ func main() {
 		false,
 		"Run in server mode. The default is client mode.",
 	)
-
 	flag.Parse()
 
-	logger := plain.New(os.Stdout)
+	logger := plain.New()
 
 	if err := godotenv.Load(); err != nil {
 		logger.Error(fmt.Errorf("loading env: %v", err), nil)
@@ -98,13 +83,13 @@ func main() {
 		server.Run(cfg)
 	} else {
 		cfg := client.Config{
-			VPNPort:          vpnPort,
-			ClientPort:       clientPort,
-			RemoteServerIP:   remoteServerIP,
-			RemoteServerPort: remoteServerPort,
-			SecretKey:        secretKey,
-			Logger:           logger,
-			BufSize:          bufSize,
+			VPNPort:    vpnPort,
+			ClientPort: clientPort,
+			ServerIP:   serverIP,
+			ServerPort: serverPort,
+			SecretKey:  secretKey,
+			Logger:     logger,
+			BufSize:    bufSize,
 		}
 		client.Run(cfg)
 	}

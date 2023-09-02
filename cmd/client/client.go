@@ -15,8 +15,8 @@ import (
 
 func Run(cfg Config) {
 	clientAddr := net.JoinHostPort("127.0.0.1", cfg.ClientPort)
-	serverAddr := net.JoinHostPort(cfg.RemoteServerIP, cfg.RemoteServerPort)
-	wsServerAddr := fmt.Sprintf("ws://%s/ws", serverAddr)
+	serverAddr := net.JoinHostPort(cfg.ServerIP, cfg.ServerPort)
+	wsAddr := fmt.Sprintf("ws://%s/ws", serverAddr)
 	vpnAddr := net.JoinHostPort("127.0.0.1", cfg.VPNPort)
 
 	udp := udp.New(
@@ -27,20 +27,20 @@ func Run(cfg Config) {
 	)
 
 	if err := udp.Listen(); err != nil {
-		cfg.Logger.Error(fmt.Errorf("creating udp listener: %v", err), nil)
+		cfg.Logger.Error(err, nil)
 	}
-	defer udp.Conn.Close()
+	defer udp.Listener.Close()
 
 	cfg.Logger.Info("UDP server listening on "+clientAddr, nil)
 
-	wsConn, err := ws.Dial(wsServerAddr)
+	wsConn, err := ws.Dial(wsAddr)
 	if err != nil {
 		cfg.Logger.Error(fmt.Errorf("dialing ws: %v", err), nil)
 		os.Exit(1)
 	}
-	defer wsConn.Close(websocket.StatusInternalError, "")
+	defer wsConn.Close(websocket.StatusNormalClosure, "")
 
-	cfg.Logger.Info("WebSocket connected: "+wsServerAddr, nil)
+	cfg.Logger.Info("WebSocket connected: "+wsAddr, nil)
 
 	websocket := ws.New(
 		serverAddr,
@@ -61,7 +61,7 @@ func Run(cfg Config) {
 	udp.MsgHandlerFunc = wire.UDPMsgHandler
 
 	go websocket.Read()
-	go udp.UDPReadHandler()
+	go udp.Read()
 
 	graceful.ShutdownHandler()
 }

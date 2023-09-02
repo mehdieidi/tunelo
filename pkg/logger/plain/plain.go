@@ -2,7 +2,6 @@ package plain
 
 import (
 	"fmt"
-	"io"
 	"runtime/debug"
 
 	"tunelo/pkg/logger"
@@ -10,7 +9,7 @@ import (
 
 type plain struct{}
 
-func New(w io.Writer) logger.Logger {
+func New() logger.Logger {
 	return &plain{}
 }
 
