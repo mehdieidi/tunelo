@@ -37,25 +37,25 @@ func main() {
 		&remoteServerIP,
 		"server_ip",
 		"127.0.0.1",
-		"Remote server IP.",
+		"Remote server IP used by the client to tunnel data.",
 	)
 	flag.StringVar(
 		&remoteServerPort,
 		"server_port",
 		"23230",
-		"Remote server port.",
+		"Remote server port used by the client to tunnel data.",
 	)
 	flag.StringVar(
 		&serverIP,
 		"i",
 		"127.0.0.1",
-		"Server IP address.",
+		"Server IP address of the tunnel.",
 	)
 	flag.StringVar(
 		&serverPort,
 		"p",
 		"23230",
-		"Server Port number.",
+		"Server port number that the tunnel server will listen to.",
 	)
 	flag.BoolVar(
 		&clientMode,
