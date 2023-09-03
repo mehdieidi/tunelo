@@ -60,13 +60,21 @@ This iptables command is adding a NAT rule that masquerades (changes) the source
  scenarios where you have a private network behind a NAT gateway or firewall, and you want the
 internal devices to access the internet using the public IP address of the gateway.
 
+After running the following command, you can install the iptables-persistent package using apt to
+ make the rule persistent.
+
 ``` bash
 $ iptables -A POSTROUTING -t nat -s 10.8.0.0/24 -j MASQUERADE
 ...
 ```
 
+## Enable IP Forwarding on Linux
+
 The following command is used to enable IP forwarding on a Linux system. IP forwarding is a feature
  that allows a Linux system to route traffic between different network interfaces or subnets.
+
+After running the following command, you can edit the /etc/sysctl.conf and set the
+ net.ipv4.ip_forward parameter to 1. Then run sysctl -p to make the IP forwarding persistent.
 
 ``` bash
 $ echo 1 > /proc/sys/net/ipv4/ip_forward
