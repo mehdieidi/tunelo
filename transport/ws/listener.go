@@ -1,11 +1,14 @@
 package ws
 
-import "net/http"
+import (
+	"fmt"
+	"net/http"
+)
 
 func (s *WebSocket) ListenAndServe() error {
-	http.HandleFunc("/ws", s.handler)
+	http.HandleFunc("/"+s.Endpoint, s.handler)
 
-	s.Logger.Info("WebSocket server listening on "+s.ServerAddr, nil)
+	s.Logger.Info(fmt.Sprintf("WebSocket server listening on %s", s.ServerAddr), nil)
 
 	return http.ListenAndServe(s.ServerAddr, nil)
 }

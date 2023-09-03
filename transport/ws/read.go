@@ -3,27 +3,25 @@ package ws
 import (
 	"context"
 	"fmt"
+
+	"tunelo/transport"
 )
 
-func (s *WebSocket) Read() {
+func (s *WebSocket) Read(transportConn *transport.Conn) error {
 	if s.MsgHandlerFunc == nil {
-		s.Logger.Error(fmt.Errorf("no websocket msg handler registered"), nil)
-		return
-	}
-	if s.Conn == nil {
-		s.Logger.Error(fmt.Errorf("no websocket conn registered"), nil)
-		return
+		err := fmt.Errorf("no websocket msg handler registered")
+		s.Logger.Error(err, nil)
+		return err
 	}
 
 	for {
-		_, buf, err := s.Conn.Read(context.Background())
+		_, msg, err := transportConn.WebSocket.Read(context.Background())
 		if err != nil {
-			s.Logger.Error(fmt.Errorf("reading from ws: %v", err), nil)
-			break
+			return err
 		}
 
-		s.Logger.Info("data received over ws.", nil)
+		s.Logger.Info("msg received over ws.", nil)
 
-		go s.MsgHandlerFunc(buf)
+		go s.MsgHandlerFunc(transportConn, msg)
 	}
 }

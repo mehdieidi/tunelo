@@ -19,6 +19,7 @@ func main() {
 	var serverPort string
 	var bufSize int
 	var serverMode bool
+	var websocketEndpoint string
 
 	flag.StringVar(
 		&vpnPort,
@@ -56,6 +57,12 @@ func main() {
 		false,
 		"Run in server mode. The default is client mode.",
 	)
+	flag.StringVar(
+		&websocketEndpoint,
+		"ws_endpoint",
+		"ws",
+		"WebSocket endpoint that accepts websocket connections.",
+	)
 	flag.Parse()
 
 	logger := plain.New()
@@ -73,23 +80,25 @@ func main() {
 
 	if serverMode {
 		cfg := server.Config{
-			VPNPort:    vpnPort,
-			ServerIP:   serverIP,
-			ServerPort: serverPort,
-			SecretKey:  secretKey,
-			Logger:     logger,
-			BufSize:    bufSize,
+			VPNPort:           vpnPort,
+			ServerIP:          serverIP,
+			ServerPort:        serverPort,
+			SecretKey:         secretKey,
+			Logger:            logger,
+			BufSize:           bufSize,
+			WebSocketEndpoint: websocketEndpoint,
 		}
 		server.Run(cfg)
 	} else {
 		cfg := client.Config{
-			VPNPort:    vpnPort,
-			ClientPort: clientPort,
-			ServerIP:   serverIP,
-			ServerPort: serverPort,
-			SecretKey:  secretKey,
-			Logger:     logger,
-			BufSize:    bufSize,
+			VPNPort:           vpnPort,
+			ClientPort:        clientPort,
+			ServerIP:          serverIP,
+			ServerPort:        serverPort,
+			SecretKey:         secretKey,
+			Logger:            logger,
+			BufSize:           bufSize,
+			WebSocketEndpoint: websocketEndpoint,
 		}
 		client.Run(cfg)
 	}

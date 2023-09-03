@@ -13,19 +13,22 @@ func Run(cfg Config) {
 	vpnAddr := net.JoinHostPort("127.0.0.1", cfg.VPNPort)
 	serverAddr := net.JoinHostPort(cfg.ServerIP, cfg.ServerPort)
 
-	websocket := ws.New(serverAddr, cfg.Logger, nil)
+	wsTransport := &ws.WebSocket{
+		ServerAddr: serverAddr,
+		Logger:     cfg.Logger,
+		Endpoint:   cfg.WebSocketEndpoint,
+	}
 
-	wire := wire.New(
-		websocket,
-		cfg.SecretKey,
-		cfg.Logger,
-		vpnAddr,
-		cfg.BufSize,
-	)
+	wire := &wire.Wire{
+		SecretKey: cfg.SecretKey,
+		Logger:    cfg.Logger,
+		VPNAddr:   vpnAddr,
+		BufSize:   cfg.BufSize,
+	}
 
-	websocket.MsgHandlerFunc = wire.WebSocketMsgHandler
+	wsTransport.MsgHandlerFunc = wire.WebSocketMsgHandler
 
-	if err := wire.WebSocket.ListenAndServe(); err != nil {
+	if err := wsTransport.ListenAndServe(); err != nil {
 		cfg.Logger.Error(fmt.Errorf("websocket listen and serve: %v", err), nil)
 		os.Exit(1)
 	}

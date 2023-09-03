@@ -16,17 +16,3 @@ type UDP struct {
 	Listener       net.PacketConn
 	BufSize        int
 }
-
-func New(
-	serverAddr string,
-	logger logger.Logger,
-	msgHandlerFunc transport.MsgHandlerFunc,
-	bufSize int,
-) *UDP {
-	return &UDP{
-		ServerAddr:     serverAddr,
-		Logger:         logger,
-		MsgHandlerFunc: msgHandlerFunc,
-		BufSize:        bufSize,
-	}
-}

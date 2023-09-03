@@ -1,3 +1,3 @@
 package transport
 
-type MsgHandlerFunc func([]byte)
+type MsgHandlerFunc func(*Conn, []byte)

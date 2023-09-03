@@ -2,19 +2,16 @@ package ws
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"nhooyr.io/websocket"
+
+	"tunelo/transport"
 )
 
-func (s *WebSocket) Write(msg []byte) error {
-	if s.Conn == nil {
-		return fmt.Errorf("no websocket conn registered")
-	}
-
+func Write(conn *transport.Conn, msg []byte) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	return s.Conn.Write(ctx, websocket.MessageBinary, msg)
+	return conn.WebSocket.Write(ctx, websocket.MessageBinary, msg)
 }

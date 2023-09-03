@@ -8,6 +8,7 @@ import (
 	"nhooyr.io/websocket"
 
 	"tunelo/pkg/graceful"
+	"tunelo/transport"
 	"tunelo/transport/udp"
 	"tunelo/transport/ws"
 	"tunelo/wire"
@@ -16,22 +17,22 @@ import (
 func Run(cfg Config) {
 	clientAddr := net.JoinHostPort("127.0.0.1", cfg.ClientPort)
 	serverAddr := net.JoinHostPort(cfg.ServerIP, cfg.ServerPort)
-	wsAddr := fmt.Sprintf("ws://%s/ws", serverAddr)
+	wsAddr := fmt.Sprintf("ws://%s/%s", serverAddr, cfg.WebSocketEndpoint)
 	vpnAddr := net.JoinHostPort("127.0.0.1", cfg.VPNPort)
 
-	udp := udp.New(
-		clientAddr,
-		cfg.Logger,
-		nil,
-		cfg.BufSize,
-	)
+	udp := &udp.UDP{
+		ServerAddr: clientAddr,
+		Logger:     cfg.Logger,
+		BufSize:    cfg.BufSize,
+	}
 
 	if err := udp.Listen(); err != nil {
-		cfg.Logger.Error(err, nil)
+		cfg.Logger.Error(fmt.Errorf("creating udp listener: %v", err), nil)
+		os.Exit(1)
 	}
 	defer udp.Listener.Close()
 
-	cfg.Logger.Info("UDP server listening on "+clientAddr, nil)
+	cfg.Logger.Info(fmt.Sprintf("UDP server listening on %s", clientAddr), nil)
 
 	wsConn, err := ws.Dial(wsAddr)
 	if err != nil {
@@ -40,28 +41,27 @@ func Run(cfg Config) {
 	}
 	defer wsConn.Close(websocket.StatusNormalClosure, "")
 
-	cfg.Logger.Info("WebSocket connected: "+wsAddr, nil)
+	transportConn := &transport.Conn{WebSocket: wsConn}
 
-	websocket := ws.New(
-		serverAddr,
-		cfg.Logger,
-		nil,
-	)
-	websocket.Conn = wsConn
+	cfg.Logger.Info(fmt.Sprintf("WebSocket connected: %s", wsAddr), nil)
 
-	wire := wire.New(
-		websocket,
-		cfg.SecretKey,
-		cfg.Logger,
-		vpnAddr,
-		cfg.BufSize,
-	)
+	wsTransport := &ws.WebSocket{
+		ServerAddr: serverAddr,
+		Logger:     cfg.Logger,
+	}
 
-	websocket.MsgHandlerFunc = wire.WebSocketMsgHandler
+	wire := &wire.Wire{
+		SecretKey: cfg.SecretKey,
+		Logger:    cfg.Logger,
+		VPNAddr:   vpnAddr,
+		BufSize:   cfg.BufSize,
+	}
+
+	wsTransport.MsgHandlerFunc = wire.WebSocketMsgHandler
 	udp.MsgHandlerFunc = wire.UDPMsgHandler
 
-	go websocket.Read()
-	go udp.Read()
+	go wsTransport.Read(transportConn)
+	go udp.Read(transportConn)
 
 	graceful.ShutdownHandler()
 }

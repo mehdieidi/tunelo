@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	"nhooyr.io/websocket"
+
+	"tunelo/transport"
 )
 
 func (s *WebSocket) handler(w http.ResponseWriter, r *http.Request) {
@@ -15,7 +17,10 @@ func (s *WebSocket) handler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close(websocket.StatusNormalClosure, "")
 
-	s.Conn = conn
+	c := &transport.Conn{WebSocket: conn}
 
-	s.Read()
+	if err := s.Read(c); err != nil {
+		s.Logger.Error(fmt.Errorf("reading ws conn: %v", err), nil)
+		return
+	}
 }

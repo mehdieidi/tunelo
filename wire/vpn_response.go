@@ -3,13 +3,15 @@ package wire
 import (
 	"fmt"
 	"net"
+
+	"tunelo/transport"
 )
 
-func (w *Wire) readVPNResponse(conn net.Conn) {
+func (w *Wire) readVPNResponse(vpnConn net.Conn, transportConn *transport.Conn) {
 	buf := make([]byte, w.BufSize)
 
 	for {
-		n, err := conn.Read(buf)
+		n, err := vpnConn.Read(buf)
 		if err != nil {
 			w.Logger.Error(fmt.Errorf("reading from vpn conn: %v", err), nil)
 			break
@@ -17,10 +19,10 @@ func (w *Wire) readVPNResponse(conn net.Conn) {
 
 		w.Logger.Info("read vpn response.", nil)
 
-		go w.UDPMsgHandler(buf[:n])
+		go w.UDPMsgHandler(transportConn, buf[:n])
 	}
 
-	conn.Close()
+	vpnConn.Close()
 
 	w.Logger.Info("closed vpn udp conn.", nil)
 }
