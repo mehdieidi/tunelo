@@ -67,7 +67,7 @@ func main() {
 	}
 	defer vpnConn.Close()
 
-	ws := ws{vpnConn: vpnConn}
+	ws := ws{vpnConn: vpnConn, logger: logger}
 
 	http.HandleFunc("/ws", ws.handler)
 
