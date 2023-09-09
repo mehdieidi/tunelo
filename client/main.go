@@ -67,6 +67,7 @@ func main() {
 
 	go io.Copy(wsNetConn, clientUDPConn)
 	go io.Copy(vpnConn, wsNetConn)
+	go io.Copy(wsNetConn, vpnConn)
 
 	ctx, stop := signal.NotifyContext(
 		context.Background(),
