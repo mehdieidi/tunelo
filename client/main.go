@@ -25,24 +25,29 @@ func main() {
 	flag.Parse()
 
 	clientAddr := net.JoinHostPort("127.0.0.1", "23231")
-	udpAddr, err := net.ResolveUDPAddr("udp", clientAddr)
+	clientUDPAddr, err := net.ResolveUDPAddr("udp", clientAddr)
 	if err != nil {
 		log.Fatal("resolving udp addr ", err)
 	}
 
-	udpConn, err := net.ListenUDP("udp ", udpAddr)
+	clientUDPConn, err := net.ListenUDP("udp", clientUDPAddr)
 	if err != nil {
 		log.Fatal("creating udp listener ", err)
 	}
-	defer udpConn.Close()
+	defer clientUDPConn.Close()
 
 	vpnAddr := net.JoinHostPort("127.0.0.1", vpnPort)
-	udpAddr, err = net.ResolveUDPAddr("udp", vpnAddr)
+	vpnUDPAddr, err := net.ResolveUDPAddr("udp", vpnAddr)
 	if err != nil {
 		log.Fatal("resolving udp addr ", err)
 	}
 
-	vpnConn, err := net.ListenUDP("udp ", udpAddr)
+	localAddr, err := net.ResolveUDPAddr("udp", "127.0.0.1:")
+	if err != nil {
+		log.Fatal("resolving local UDP addr:", err)
+	}
+
+	vpnConn, err := net.DialUDP("udp", localAddr, vpnUDPAddr)
 	if err != nil {
 		log.Fatal("creating udp listener ", err)
 	}
@@ -60,7 +65,7 @@ func main() {
 
 	fmt.Println("ws and udp connected, copying...")
 
-	go io.Copy(wsNetConn, udpConn)
+	go io.Copy(wsNetConn, clientUDPConn)
 	go io.Copy(vpnConn, wsNetConn)
 
 	ctx, stop := signal.NotifyContext(
