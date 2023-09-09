@@ -17,29 +17,42 @@ import (
 func main() {
 	var serverIP string
 	var serverPort string
+	var vpnPort string
 
 	flag.StringVar(&serverIP, "server_ip", "127.0.0.1", "Server IP.")
 	flag.StringVar(&serverPort, "server_port", "23230", "Server port.")
+	flag.StringVar(&vpnPort, "vpn_port", "23233", "VPN port.")
 	flag.Parse()
 
-	serverAddr := net.JoinHostPort(serverIP, serverPort)
 	clientAddr := net.JoinHostPort("127.0.0.1", "23231")
-
 	udpAddr, err := net.ResolveUDPAddr("udp", clientAddr)
 	if err != nil {
-		log.Fatal("resolving udp addr", err)
+		log.Fatal("resolving udp addr ", err)
 	}
 
-	listener, err := net.ListenUDP("udp", udpAddr)
+	udpConn, err := net.ListenUDP("udp ", udpAddr)
 	if err != nil {
-		log.Fatal("creating udp listener", err)
+		log.Fatal("creating udp listener ", err)
 	}
-	defer listener.Close()
+	defer udpConn.Close()
 
+	vpnAddr := net.JoinHostPort("127.0.0.1", vpnPort)
+	udpAddr, err = net.ResolveUDPAddr("udp", vpnAddr)
+	if err != nil {
+		log.Fatal("resolving udp addr ", err)
+	}
+
+	vpnConn, err := net.ListenUDP("udp ", udpAddr)
+	if err != nil {
+		log.Fatal("creating udp listener ", err)
+	}
+	defer vpnConn.Close()
+
+	serverAddr := net.JoinHostPort(serverIP, serverPort)
 	wsEndpoint := fmt.Sprintf("ws://%s/ws", serverAddr)
 	wsConn, _, err := websocket.Dial(context.Background(), wsEndpoint, nil)
 	if err != nil {
-		log.Fatal("dialling ws", err)
+		log.Fatal("dialling ws ", err)
 	}
 	defer wsConn.Close(websocket.StatusNormalClosure, "")
 
@@ -47,8 +60,8 @@ func main() {
 
 	fmt.Println("ws and udp connected, copying...")
 
-	go io.Copy(listener, wsNetConn)
-	go io.Copy(wsNetConn, listener)
+	go io.Copy(wsNetConn, udpConn)
+	go io.Copy(vpnConn, wsNetConn)
 
 	ctx, stop := signal.NotifyContext(
 		context.Background(),

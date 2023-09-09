@@ -40,15 +40,13 @@ func main() {
 	flag.StringVar(&vpnPort, "vpn_port", "23233", "VPN port.")
 	flag.Parse()
 
-	serverAddr := net.JoinHostPort(serverIP, serverPort)
 	vpnAddr := net.JoinHostPort("127.0.0.1", vpnPort)
-
 	udpAddr, err := net.ResolveUDPAddr("udp", vpnAddr)
 	if err != nil {
 		log.Fatal("resolving udp addr", err)
 	}
 
-	localAddr, err := net.ResolveUDPAddr("udp", "127.0.0.1:") // Use any available local port
+	localAddr, err := net.ResolveUDPAddr("udp", "127.0.0.1:")
 	if err != nil {
 		log.Fatal("resolving local UDP addr:", err)
 	}
@@ -63,6 +61,7 @@ func main() {
 
 	http.HandleFunc("/ws", ws.handler)
 
+	serverAddr := net.JoinHostPort(serverIP, serverPort)
 	fmt.Println("WebSocket server listening on", serverAddr)
 	if err := http.ListenAndServe(serverAddr, nil); err != nil {
 		log.Fatal("websocket server listening", err)
