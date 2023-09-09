@@ -3,7 +3,6 @@ module tunelo
 go 1.20
 
 require (
-	github.com/joho/godotenv v1.5.1
 	github.com/rs/zerolog v1.30.0
 	golang.org/x/crypto v0.12.0
 	nhooyr.io/websocket v1.8.7
