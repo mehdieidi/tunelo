@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
 	"crypto/x509"
 	"flag"
 	"fmt"
@@ -12,6 +11,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	utls "github.com/refraction-networking/utls"
 	"nhooyr.io/websocket"
 
 	"tunelo/pkg/logger/plain"
@@ -92,18 +92,20 @@ func main() {
 			os.Exit(1)
 		}
 
-		tlsConfig := &tls.Config{
-			ServerName:         serverDomain,
-			RootCAs:            rootCAs,
-			InsecureSkipVerify: false,
+		tlsConfig := &utls.Config{
+			ServerName: serverDomain,
+			// RootCAs:            rootCAs,
+			// InsecureSkipVerify: false,
 		}
 
-		tlsConn, err := tls.Dial("tcp", serverAddr, tlsConfig)
+		tcpConn, err := net.Dial("tcp", serverAddr)
 		if err != nil {
 			log.Error(fmt.Errorf("dialling tls server: %v", err), nil)
 			os.Exit(1)
 		}
-		defer tlsConn.Close()
+		defer tcpConn.Close()
+
+		tlsConn := utls.UClient(tcpConn, tlsConfig, utls.HelloRandomized)
 
 		log.Info("tls connected.", nil)
 		log.Info("proxy started...", nil)
