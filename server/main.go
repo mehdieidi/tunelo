@@ -56,6 +56,8 @@ func main() {
 		}
 		defer tcpListener.Close()
 
+		log.Info(fmt.Sprintf("TCP server listening on %s", serverAddr), nil)
+
 		for {
 			tcpConn, err := tcpListener.Accept()
 			if err != nil {
@@ -63,6 +65,8 @@ func main() {
 				break
 			}
 			defer tcpConn.Close()
+
+			log.Info("tcp connection accepted. Proxy started...", nil)
 
 			go io.Copy(vpnConn, tcpConn)
 			go io.Copy(tcpConn, vpnConn)
