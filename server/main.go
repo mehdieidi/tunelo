@@ -21,7 +21,7 @@ func main() {
 	flag.StringVar(&serverIP, "server_ip", "127.0.0.1", "Proxy server IP address.")
 	flag.StringVar(&serverPort, "server_port", "23230", "Proxy server port number.")
 	flag.StringVar(&vpnPort, "vpn_port", "23233", "Local VPN port number.")
-	flag.StringVar(&protocol, "p", "ws", "Tunnel transport protocol. Options: ws, tls, and tcp.")
+	flag.StringVar(&protocol, "p", "ws", "Tunnel transport protocol. Options: ws, utls, and tcp.")
 	flag.Parse()
 
 	log := plain.New()
@@ -49,7 +49,7 @@ func main() {
 	serverAddr := net.JoinHostPort(serverIP, serverPort)
 
 	switch protocol {
-	case "tls":
+	case "utls":
 		cert, err := tls.LoadX509KeyPair("cert.pem", "key.pem")
 		if err != nil {
 			log.Error(fmt.Errorf("loading cert and key: %v", err), nil)
