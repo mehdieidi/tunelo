@@ -22,11 +22,13 @@ func main() {
 	var serverPort string
 	var vpnPort string
 	var protocol string
+	var serverDomain string
 
 	flag.StringVar(&serverIP, "server_ip", "127.0.0.1", "Remote proxy-server IP address.")
 	flag.StringVar(&serverPort, "server_port", "23230", "Remote proxy-server port number.")
 	flag.StringVar(&vpnPort, "vpn_port", "23233", "Local VPN port number.")
 	flag.StringVar(&protocol, "p", "ws", "Tunnel transport protocol. Options: ws, tls, and tcp.")
+	flag.StringVar(&serverDomain, "server_domain", "", "Server domain.")
 	flag.Parse()
 
 	log := plain.New()
@@ -85,7 +87,13 @@ func main() {
 			os.Exit(1)
 		}
 
+		if serverDomain == "" {
+			log.Error(fmt.Errorf("server domain cannot be empty"), nil)
+			os.Exit(1)
+		}
+
 		tlsConfig := &tls.Config{
+			ServerName:         serverDomain,
 			RootCAs:            rootCAs,
 			InsecureSkipVerify: false,
 		}
