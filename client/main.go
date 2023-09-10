@@ -105,7 +105,7 @@ func main() {
 		}
 		defer tcpConn.Close()
 
-		tlsConn := utls.UClient(tcpConn, tlsConfig, utls.HelloRandomized)
+		tlsConn := utls.UClient(tcpConn, tlsConfig, utls.HelloChrome_70)
 
 		log.Info("tls connected.", nil)
 		log.Info("proxy started...", nil)
