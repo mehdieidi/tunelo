@@ -11,12 +11,12 @@ import (
 	"tunelo/pkg/logger"
 )
 
-type ws struct {
+type wsTransport struct {
 	vpnConn *net.UDPConn
 	log     logger.Logger
 }
 
-func (s *ws) handler(w http.ResponseWriter, r *http.Request) {
+func (s *wsTransport) handler(w http.ResponseWriter, r *http.Request) {
 	conn, err := websocket.Accept(w, r, nil)
 	if err != nil {
 		s.log.Error(fmt.Errorf("accepting ws conn: %v", err), nil)

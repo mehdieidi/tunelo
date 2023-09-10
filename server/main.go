@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
 	"os"
@@ -69,7 +68,7 @@ func main() {
 
 		log.Info(fmt.Sprintf("TLS server listening on %s", serverAddr), nil)
 
-		tls := TLS{log: log, vpnConn: vpnConn}
+		utlsTransport := utlsTransport{log: log, vpnConn: vpnConn}
 
 		for {
 			conn, err := tlsListener.Accept()
@@ -80,7 +79,7 @@ func main() {
 
 			log.Info("tls connection accepted. Proxy started...", nil)
 
-			go tls.handle(conn)
+			go utlsTransport.handle(conn)
 		}
 	case "tcp":
 		tcpListener, err := net.Listen("tcp", serverAddr)
@@ -92,6 +91,8 @@ func main() {
 
 		log.Info(fmt.Sprintf("TCP server listening on %s", serverAddr), nil)
 
+		tcpTransport := tcpTransport{log: log, vpnConn: vpnConn}
+
 		for {
 			tcpConn, err := tcpListener.Accept()
 			if err != nil {
@@ -102,13 +103,12 @@ func main() {
 
 			log.Info("tcp connection accepted. Proxy started...", nil)
 
-			go io.Copy(vpnConn, tcpConn)
-			go io.Copy(tcpConn, vpnConn)
+			go tcpTransport.handle(tcpConn)
 		}
 	default:
-		ws := ws{vpnConn: vpnConn, log: log}
+		wsTransport := wsTransport{vpnConn: vpnConn, log: log}
 
-		http.HandleFunc("/ws", ws.handler)
+		http.HandleFunc("/ws", wsTransport.handler)
 
 		log.Info(fmt.Sprintf("WebSocket server listening on %s", serverAddr), nil)
 		if err := http.ListenAndServe(serverAddr, nil); err != nil {

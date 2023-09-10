@@ -10,7 +10,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	utls "github.com/refraction-networking/utls"
+	tls "github.com/refraction-networking/utls"
 	"nhooyr.io/websocket"
 
 	"tunelo/pkg/logger/plain"
@@ -74,27 +74,14 @@ func main() {
 
 	switch protocol {
 	case "utls":
-		// certPEM, err := os.ReadFile("cert.pem")
-		// if err != nil {
-		// 	log.Error(fmt.Errorf("reading cert file: %v", err), nil)
-		// 	os.Exit(1)
-		// }
-
-		// rootCAs := x509.NewCertPool()
-		// if ok := rootCAs.AppendCertsFromPEM(certPEM); !ok {
-		// 	log.Error(fmt.Errorf("appending cert to root CAs: %v", err), nil)
-		// 	os.Exit(1)
-		// }
-
 		if serverDomain == "" {
 			log.Error(fmt.Errorf("server domain cannot be empty"), nil)
 			os.Exit(1)
 		}
 
-		tlsConfig := &utls.Config{
+		tlsConfig := &tls.Config{
 			ServerName:         serverDomain,
 			InsecureSkipVerify: true,
-			// RootCAs:            rootCAs,
 		}
 
 		tcpConn, err := net.Dial("tcp", serverAddr)
@@ -104,7 +91,7 @@ func main() {
 		}
 		defer tcpConn.Close()
 
-		tlsConn := utls.UClient(tcpConn, tlsConfig, utls.HelloChrome_102)
+		tlsConn := tls.UClient(tcpConn, tlsConfig, tls.HelloChrome_102)
 		if err := tlsConn.Handshake(); err != nil {
 			log.Error(fmt.Errorf("tls handshake: %v", err), nil)
 			os.Exit(1)
