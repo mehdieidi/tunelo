@@ -14,7 +14,8 @@ type TLS struct {
 }
 
 func (t *TLS) handle(conn net.Conn) {
-	defer conn.Close()
+	// TODO: figure out how to handle connection closure.
+	// defer conn.Close()
 
 	go func() {
 		if _, err := io.Copy(t.vpnConn, conn); err != nil {
