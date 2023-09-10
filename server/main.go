@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"io"
@@ -20,7 +21,7 @@ func main() {
 	flag.StringVar(&serverIP, "server_ip", "127.0.0.1", "Proxy server IP address.")
 	flag.StringVar(&serverPort, "server_port", "23230", "Proxy server port number.")
 	flag.StringVar(&vpnPort, "vpn_port", "23233", "Local VPN port number.")
-	flag.StringVar(&protocol, "p", "ws", "Tunnel transport protocol. Options: ws and tcp.")
+	flag.StringVar(&protocol, "p", "ws", "Tunnel transport protocol. Options: ws, tls, and tcp.")
 	flag.Parse()
 
 	log := plain.New()
@@ -48,6 +49,39 @@ func main() {
 	serverAddr := net.JoinHostPort(serverIP, serverPort)
 
 	switch protocol {
+	case "tls":
+		cert, err := tls.LoadX509KeyPair("cert.pem", "key.pem")
+		if err != nil {
+			log.Error(fmt.Errorf("loading cert and key: %v", err), nil)
+			os.Exit(1)
+		}
+
+		tlsConfig := &tls.Config{
+			Certificates: []tls.Certificate{cert},
+		}
+
+		tlsListener, err := tls.Listen("tcp", serverAddr, tlsConfig)
+		if err != nil {
+			log.Error(fmt.Errorf("creating tls listener: %v", err), nil)
+			os.Exit(1)
+		}
+		defer tlsListener.Close()
+
+		log.Info(fmt.Sprintf("TLS server listening on %s", serverAddr), nil)
+
+		tls := TLS{log: log, vpnConn: vpnConn}
+
+		for {
+			conn, err := tlsListener.Accept()
+			if err != nil {
+				log.Error(fmt.Errorf("accepting tls conn: %v", err), nil)
+				continue
+			}
+
+			log.Info("tls connection accepted. Proxy started...", nil)
+
+			go tls.handle(conn)
+		}
 	case "tcp":
 		tcpListener, err := net.Listen("tcp", serverAddr)
 		if err != nil {

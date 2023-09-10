@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"flag"
 	"fmt"
 	"io"
@@ -24,7 +26,7 @@ func main() {
 	flag.StringVar(&serverIP, "server_ip", "127.0.0.1", "Remote proxy-server IP address.")
 	flag.StringVar(&serverPort, "server_port", "23230", "Remote proxy-server port number.")
 	flag.StringVar(&vpnPort, "vpn_port", "23233", "Local VPN port number.")
-	flag.StringVar(&protocol, "p", "ws", "Tunnel transport protocol. Options: ws and tcp.")
+	flag.StringVar(&protocol, "p", "ws", "Tunnel transport protocol. Options: ws, tls, and tcp.")
 	flag.Parse()
 
 	log := plain.New()
@@ -70,6 +72,37 @@ func main() {
 	serverAddr := net.JoinHostPort(serverIP, serverPort)
 
 	switch protocol {
+	case "tls":
+		certPEM, err := os.ReadFile("cert.pem")
+		if err != nil {
+			log.Error(fmt.Errorf("reading cert file: %v", err), nil)
+			os.Exit(1)
+		}
+
+		rootCAs := x509.NewCertPool()
+		if ok := rootCAs.AppendCertsFromPEM(certPEM); !ok {
+			log.Error(fmt.Errorf("appending cert to root CAs: %v", err), nil)
+			os.Exit(1)
+		}
+
+		tlsConfig := &tls.Config{
+			RootCAs:            rootCAs,
+			InsecureSkipVerify: false,
+		}
+
+		tlsConn, err := tls.Dial("tcp", serverAddr, tlsConfig)
+		if err != nil {
+			log.Error(fmt.Errorf("dialling tls server: %v", err), nil)
+			os.Exit(1)
+		}
+		defer tlsConn.Close()
+
+		log.Info("tls connected.", nil)
+		log.Info("proxy started...", nil)
+
+		go io.Copy(tlsConn, clientUDPConn)
+		go io.Copy(vpnConn, tlsConn)
+		go io.Copy(tlsConn, vpnConn)
 	case "tcp":
 		tcpConn, err := net.Dial("tcp", serverAddr)
 		if err != nil {
