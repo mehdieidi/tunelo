@@ -9,20 +9,55 @@ import (
 )
 
 type tcpTransport struct {
-	vpnConn *net.UDPConn
-	log     logger.Logger
+	serverAddr string
+	vpnConn    *net.UDPConn
+	logger     logger.Logger
+}
+
+func (t *tcpTransport) run() error {
+	tcpListener, err := net.Listen("tcp", t.serverAddr)
+	if err != nil {
+		return fmt.Errorf("error creating tcp listener: %v", err)
+	}
+	defer func(c net.Listener) {
+		err := c.Close()
+		if err != nil {
+			t.logger.Error(fmt.Errorf("error closing tcp conn: %v", err), nil)
+		}
+	}(tcpListener)
+
+	t.logger.Info(fmt.Sprintf("TCP server listening on %s", t.serverAddr), nil)
+
+	for {
+		tcpConn, err := tcpListener.Accept()
+		if err != nil {
+			t.logger.Error(fmt.Errorf("error accepting tcp conn: %v", err), nil)
+			continue
+		}
+
+		t.logger.Info("tcp connection accepted. Tunneling...", nil)
+
+		go t.handle(tcpConn)
+	}
 }
 
 func (t *tcpTransport) handle(conn net.Conn) {
-	defer conn.Close()
+	defer func(conn net.Conn) {
+		err := conn.Close()
+		if err != nil {
+			t.logger.Error(fmt.Errorf("error closing tcp conn: %v", err), nil)
+		}
+	}(conn)
 
 	go func() {
-		if _, err := io.Copy(t.vpnConn, conn); err != nil {
-			t.log.Error(fmt.Errorf("copying from tcp conn to vpn: %v", err), nil)
+		_, err := io.Copy(t.vpnConn, conn)
+		if err != nil {
+			t.logger.Error(fmt.Errorf("error copying from tcp conn to vpn: %v", err), nil)
 		}
 	}()
 
-	if _, err := io.Copy(conn, t.vpnConn); err != nil {
-		t.log.Error(fmt.Errorf("copying from vpn to tcp conn: %v", err), nil)
+	_, err := io.Copy(conn, t.vpnConn)
+	if err != nil {
+		t.logger.Error(fmt.Errorf("error copying from vpn to tcp conn: %v", err), nil)
 	}
 }

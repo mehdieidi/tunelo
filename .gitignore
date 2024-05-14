@@ -15,6 +15,8 @@
 # vendor/
 
 .vscode/
+.idea/
+
 logs.log
 tunelo
 *.pem

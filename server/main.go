@@ -1,11 +1,9 @@
 package main
 
 import (
-	"crypto/tls"
 	"flag"
 	"fmt"
 	"net"
-	"net/http"
 	"os"
 
 	"tunelo/pkg/logger/plain"
@@ -23,96 +21,67 @@ func main() {
 	flag.StringVar(&protocol, "p", "ws", "Tunnel transport protocol. Options: ws, utls, and tcp.")
 	flag.Parse()
 
-	log := plain.New()
+	logger := plain.New()
 
 	vpnAddr := net.JoinHostPort("127.0.0.1", vpnPort)
 	vpnUDPAddr, err := net.ResolveUDPAddr("udp", vpnAddr)
 	if err != nil {
-		log.Error(fmt.Errorf("resolving vpn udp addr: %v", err), nil)
+		logger.Error(fmt.Errorf("error resolving vpn udp addr: %v", err), nil)
 		os.Exit(1)
 	}
 
 	localUDPAddr, err := net.ResolveUDPAddr("udp", "127.0.0.1:")
 	if err != nil {
-		log.Error(fmt.Errorf("resolving local udp addr: %v", err), nil)
+		logger.Error(fmt.Errorf("error resolving local udp addr: %v", err), nil)
 		os.Exit(1)
 	}
 
 	vpnConn, err := net.DialUDP("udp", localUDPAddr, vpnUDPAddr)
 	if err != nil {
-		log.Error(fmt.Errorf("dialling vpn: %v", err), nil)
+		logger.Error(fmt.Errorf("error dialling vpn: %v", err), nil)
 		os.Exit(1)
 	}
-	defer vpnConn.Close()
+	defer func(c *net.UDPConn) {
+		err := c.Close()
+		if err != nil {
+			logger.Error(fmt.Errorf("error closing udp conn: %v", err), nil)
+		}
+	}(vpnConn)
 
 	serverAddr := net.JoinHostPort(serverIP, serverPort)
 
 	switch protocol {
 	case "utls":
-		cert, err := tls.LoadX509KeyPair("cert.pem", "key.pem")
+		t := utlsTransport{
+			serverAddr: serverAddr,
+			vpnConn:    vpnConn,
+			logger:     logger,
+		}
+		err := t.run()
 		if err != nil {
-			log.Error(fmt.Errorf("loading cert and key: %v", err), nil)
+			logger.Error(err, nil)
 			os.Exit(1)
-		}
-
-		tlsConfig := &tls.Config{
-			Certificates: []tls.Certificate{cert},
-		}
-
-		tlsListener, err := tls.Listen("tcp", serverAddr, tlsConfig)
-		if err != nil {
-			log.Error(fmt.Errorf("creating tls listener: %v", err), nil)
-			os.Exit(1)
-		}
-		defer tlsListener.Close()
-
-		log.Info(fmt.Sprintf("TLS server listening on %s", serverAddr), nil)
-
-		utlsTransport := utlsTransport{log: log, vpnConn: vpnConn}
-
-		for {
-			conn, err := tlsListener.Accept()
-			if err != nil {
-				log.Error(fmt.Errorf("accepting tls conn: %v", err), nil)
-				continue
-			}
-
-			log.Info("tls connection accepted. Proxy started...", nil)
-
-			go utlsTransport.handle(conn)
 		}
 	case "tcp":
-		tcpListener, err := net.Listen("tcp", serverAddr)
+		t := tcpTransport{
+			serverAddr: serverAddr,
+			vpnConn:    vpnConn,
+			logger:     logger,
+		}
+		err := t.run()
 		if err != nil {
-			log.Error(fmt.Errorf("creating tcp listener: %v", err), nil)
+			logger.Error(err, nil)
 			os.Exit(1)
 		}
-		defer tcpListener.Close()
-
-		log.Info(fmt.Sprintf("TCP server listening on %s", serverAddr), nil)
-
-		tcpTransport := tcpTransport{log: log, vpnConn: vpnConn}
-
-		for {
-			tcpConn, err := tcpListener.Accept()
-			if err != nil {
-				log.Error(fmt.Errorf("accepting tcp conn: %v", err), nil)
-				break
-			}
-			defer tcpConn.Close()
-
-			log.Info("tcp connection accepted. Proxy started...", nil)
-
-			go tcpTransport.handle(tcpConn)
-		}
 	default:
-		wsTransport := wsTransport{vpnConn: vpnConn, log: log}
-
-		http.HandleFunc("/ws", wsTransport.handler)
-
-		log.Info(fmt.Sprintf("WebSocket server listening on %s", serverAddr), nil)
-		if err := http.ListenAndServe(serverAddr, nil); err != nil {
-			log.Error(fmt.Errorf("listen and server: %v", err), nil)
+		t := wsTransport{
+			serverAddr: serverAddr,
+			vpnConn:    vpnConn,
+			logger:     logger,
+		}
+		err := t.run()
+		if err != nil {
+			logger.Error(err, nil)
 			os.Exit(1)
 		}
 	}
