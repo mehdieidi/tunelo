@@ -19,6 +19,34 @@ like websocket or TCP. Helping to use VPNs in restricted areas.
   - [Client WireGuard Config](#Client-WireGuard-Config)
   - [Run Proxy Client](#Run-Proxy-Client)
 - [License](#license)
+- [Project documentation](docs/README.md)
+- [Architecture](docs/architecture.md)
+- [Configuration reference](docs/configuration.md)
+- [Development](docs/development.md)
+- [Security notes](docs/security.md)
+
+## Quick start
+
+`tunelo` forwards UDP traffic between a local VPN endpoint and a remote proxy over WebSocket, TCP, or a TLS connection whose client hello is shaped with uTLS. It is intended to carry traffic such as WireGuard through networks where direct UDP connectivity is restricted.
+
+The repository builds two separate Go programs: `server/` runs beside the server-side VPN endpoint, and `client/` runs beside the client-side endpoint. Both default to WebSocket mode. Start the server first, then start the client with the matching transport and addresses.
+
+```powershell
+go build -o tunelo-server ./server
+go build -o tunelo-client ./client
+```
+
+See [docs/configuration.md](docs/configuration.md) for flags and protocol-specific setup, and [docs/architecture.md](docs/architecture.md) for the data path and system diagram. In `utls` mode the server also needs `cert.pem` and `key.pem` in its working directory. The current client skips certificate verification; review [docs/security.md](docs/security.md) before exposing a listener or relying on this mode.
+
+## Project documentation
+
+- [Documentation index](docs/README.md)
+- [System overview and architecture diagram](docs/architecture.md) ([HTML](docs/architecture.html), [SVG](docs/architecture.svg))
+- [Configuration and deployment](docs/configuration.md)
+- [Development and repository layout](docs/development.md)
+- [Security notes and current limitations](docs/security.md)
+
+![Tunelo system architecture](docs/architecture.svg)
 
 ## Server
 

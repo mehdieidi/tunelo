@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 1280 248" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="tunelo-architecture-title tunelo-architecture-desc">
+      <title id="tunelo-architecture-title">Tunelo system architecture</title>
+      <desc id="tunelo-architecture-desc">Local WireGuard sends UDP to the Tunelo client, which relays it over WebSocket, TCP, or uTLS/TLS to the Tunelo server and a remote WireGuard endpoint.</desc>
+      <defs><style>@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&amp;family=Space+Grotesk:wght@400;500;600&amp;family=Noto+Serif:ital@0;1&amp;display=swap');</style>
+        <marker id="tunelo-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto-start-reverse"><path d="M0 0 L8 3 L0 6 Z" fill="#617178"/></marker>
+      </defs>
+      <rect width="1280" height="248" fill="#f5f3ed"/>
+      <line x1="200" y1="104" x2="272" y2="104" stroke="#617178" stroke-width="1.5" marker-start="url(#tunelo-arrow)" marker-end="url(#tunelo-arrow)"/>
+      <line x1="456" y1="104" x2="528" y2="104" stroke="#075d5b" stroke-width="1.7" marker-start="url(#tunelo-arrow)" marker-end="url(#tunelo-arrow)"/>
+      <line x1="712" y1="104" x2="784" y2="104" stroke="#075d5b" stroke-width="1.7" marker-start="url(#tunelo-arrow)" marker-end="url(#tunelo-arrow)"/>
+      <line x1="968" y1="104" x2="1040" y2="104" stroke="#617178" stroke-width="1.5" marker-start="url(#tunelo-arrow)" marker-end="url(#tunelo-arrow)"/>
+      <rect x="208" y="73" width="56" height="18" rx="2" fill="#f5f3ed"/>
+      <text x="236" y="86" fill="#617178" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">UDP</text>
+      <rect x="464" y="73" width="56" height="18" rx="2" fill="#f5f3ed"/>
+      <text x="492" y="86" fill="#075d5b" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">RELAY</text>
+      <rect x="720" y="73" width="56" height="18" rx="2" fill="#f5f3ed"/>
+      <text x="748" y="86" fill="#075d5b" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">RELAY</text>
+      <rect x="976" y="73" width="56" height="18" rx="2" fill="#f5f3ed"/>
+      <text x="1004" y="86" fill="#617178" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">UDP</text>
+
+      <g>
+        <rect x="40" y="64" width="160" height="80" rx="6" fill="#f5f3ed"/>
+        <rect x="40" y="64" width="160" height="80" rx="6" fill="#617178" fill-opacity=".10" stroke="#7d898e"/>
+        <rect x="52" y="76" width="36" height="14" rx="2" fill="none" stroke="#7d898e"/>
+        <text x="70" y="86" fill="#617178" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">LOCAL</text>
+        <text x="120" y="111" fill="#102c3a" font-size="12" font-weight="600" text-anchor="middle">WireGuard</text>
+        <text x="120" y="129" fill="#617178" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">UDP endpoint</text>
+      </g>
+      <g>
+        <rect x="272" y="64" width="184" height="80" rx="6" fill="#f5f3ed"/>
+        <rect x="272" y="64" width="184" height="80" rx="6" fill="#fff" stroke="#102c3a"/>
+        <rect x="284" y="76" width="52" height="14" rx="2" fill="none" stroke="#102c3a" stroke-opacity=".4"/>
+        <text x="310" y="86" fill="#102c3a" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">CLIENT</text>
+        <text x="364" y="111" fill="#102c3a" font-size="12" font-weight="600" text-anchor="middle">Tunelo client</text>
+        <text x="364" y="129" fill="#617178" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">127.0.0.1:23231</text>
+      </g>
+      <g>
+        <rect x="528" y="64" width="184" height="80" rx="6" fill="#f5f3ed"/>
+        <rect x="528" y="64" width="184" height="80" rx="6" fill="#087b78" fill-opacity=".08" stroke="#087b78" stroke-width="1.4"/>
+        <rect x="540" y="76" width="64" height="14" rx="2" fill="none" stroke="#087b78" stroke-opacity=".55"/>
+        <text x="572" y="86" fill="#087b78" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">NETWORK</text>
+        <text x="620" y="111" fill="#102c3a" font-size="12" font-weight="600" text-anchor="middle">Transport</text>
+        <text x="620" y="129" fill="#617178" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">ws · tcp · utls</text>
+      </g>
+      <g>
+        <rect x="784" y="64" width="184" height="80" rx="6" fill="#f5f3ed"/>
+        <rect x="784" y="64" width="184" height="80" rx="6" fill="#fff" stroke="#102c3a"/>
+        <rect x="796" y="76" width="52" height="14" rx="2" fill="none" stroke="#102c3a" stroke-opacity=".4"/>
+        <text x="822" y="86" fill="#102c3a" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">SERVER</text>
+        <text x="876" y="111" fill="#102c3a" font-size="12" font-weight="600" text-anchor="middle">Tunelo server</text>
+        <text x="876" y="129" fill="#617178" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">listen :23230</text>
+      </g>
+      <g>
+        <rect x="1040" y="64" width="160" height="80" rx="6" fill="#f5f3ed"/>
+        <rect x="1040" y="64" width="160" height="80" rx="6" fill="#617178" fill-opacity=".10" stroke="#7d898e"/>
+        <rect x="1052" y="76" width="36" height="14" rx="2" fill="none" stroke="#7d898e"/>
+        <text x="1070" y="86" fill="#617178" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">REMOTE</text>
+        <text x="1120" y="111" fill="#102c3a" font-size="12" font-weight="600" text-anchor="middle">WireGuard</text>
+        <text x="1120" y="129" fill="#617178" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">UDP endpoint</text>
+      </g>
+
+      <line x1="40" y1="184" x2="1240" y2="184" stroke="#102c3a" stroke-opacity=".14"/>
+      <text x="40" y="210" fill="#617178" font-size="8" font-family="'Geist Mono', monospace" letter-spacing=".12em">BIDIRECTIONAL RELAY</text>
+      <line x1="208" y1="206" x2="260" y2="206" stroke="#617178" stroke-width="1.4" marker-start="url(#tunelo-arrow)" marker-end="url(#tunelo-arrow)"/>
+      <text x="272" y="210" fill="#617178" font-size="10">UDP / stream connection</text>
+      <rect x="496" y="199" width="16" height="14" rx="3" fill="#087b78" fill-opacity=".08" stroke="#087b78"/>
+      <text x="520" y="210" fill="#617178" font-size="10">Selected transport</text>
+    </svg>
